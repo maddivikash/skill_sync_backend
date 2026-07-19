@@ -16,13 +16,16 @@ services:
       CORS_ORIGINS: "https://skillsync-io.duckdns.org,http://3.109.158.246"
       # Password-reset links point at the live frontend.
       FRONTEND_URL: "https://skillsync-io.duckdns.org"
+      # AI coach (Groq). Set GROQ_API_KEY in the host .env to enable it.
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
     restart: unless-stopped
 
   web:
     build:
       args:
-        # Frontend calls the API over HTTPS on port 8443.
-        VITE_API_URL: "https://skillsync-io.duckdns.org:8443"
+        # Same-origin API under /api (Caddy strips the prefix). No CORS/port.
+        VITE_API_URL: "https://skillsync-io.duckdns.org/api"
     restart: unless-stopped
 
   caddy:
@@ -33,7 +36,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8443:8443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

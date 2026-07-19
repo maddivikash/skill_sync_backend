@@ -43,5 +43,9 @@ class Settings:
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "SkillSync <no-reply@skillsync.local>")
 
+    # AI coach (Groq — free hosted LLM API). If unset, the chat endpoint is off.
+    GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+
 
 settings = Settings()

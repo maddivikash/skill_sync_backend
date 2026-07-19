@@ -1,6 +1,7 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/theme";
+import ChatWidget from "./ChatWidget";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -67,6 +68,7 @@ export default function Layout() {
       <main className="app-main">
         <Outlet />
       </main>
+      <ChatWidget />
     </div>
   );
 }

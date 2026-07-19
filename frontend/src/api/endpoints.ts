@@ -58,6 +58,15 @@ export function confirmPasswordReset(
   });
 }
 
+// ---- AI coach ----
+export interface ChatMsg {
+  role: "user" | "assistant";
+  content: string;
+}
+export function sendChat(messages: ChatMsg[]): Promise<{ reply: string }> {
+  return apiFetch("/api/chat", { method: "POST", body: { messages } });
+}
+
 export function getMe(): Promise<User> {
   return apiFetch<User>("/api/users/me");
 }
