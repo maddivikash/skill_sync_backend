@@ -223,6 +223,13 @@ def _owned_task(db, uid, tid):
 
 
 def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
+    # The model sometimes passes ids as strings ("25") — coerce to int.
+    for _k in ("goal_id", "path_id", "step_id", "task_id"):
+        if _k in args and args[_k] is not None:
+            try:
+                args[_k] = int(args[_k])
+            except (TypeError, ValueError):
+                return {"error": f"invalid {_k}"}
     try:
         if name == "list_goals":
             gs = db.query(Goal).filter(Goal.owner_id == uid,
@@ -249,7 +256,10 @@ def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
             return {"tasks": [{"id": t.id, "title": t.title, "done": t.is_done} for t in s.tasks]}
 
         if name == "create_goal":
-            g = Goal(owner_id=uid, role=str(args["role"])[:100],
+            role = str(args.get("role", "")).strip()
+            if not role:
+                return {"error": "role is required"}
+            g = Goal(owner_id=uid, role=role[:100],
                      hours_per_week=int(args.get("hours_per_week") or 5),
                      duration_weeks=int(args.get("duration_weeks") or 12))
             db.add(g); db.commit(); db.refresh(g)
@@ -398,9 +408,10 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                 except json.JSONDecodeError:
                     args = {}
                 fname = tc["function"]["name"]
-                if fname in WRITE_TOOLS:
-                    changed = True
                 result = run_tool(fname, args, db, current_user.id)
+                # Only flag a data change when the write actually succeeded.
+                if fname in WRITE_TOOLS and isinstance(result, dict) and "error" not in result:
+                    changed = True
                 # Surface suggestions as selectable chips in the chat.
                 if fname == "suggest_for_role" and isinstance(result, dict):
                     suggestions = [{"name": nm, "category": cat}

@@ -43,18 +43,19 @@ def check(name, cond, detail=""):
     print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f"  ({detail})" if detail and not ok else ""))
 
 
-def chat(text, token):
+def chat(text, token, goal_id=None):
     # Retry transient rate-limits (Groq free tier) so the eval is reliable —
     # both HTTP errors and the graceful 200 "busy" reply.
     for attempt in range(4):
+        body = {"messages": [{"role": "user", "content": text}], "goal_id": goal_id}
         try:
-            r = _req("/api/api/chat", {"messages": [{"role": "user", "content": text}]}, token)
+            r = _req("/api/api/chat", body, token)
         except urllib.error.HTTPError as e:
             if e.code in (429, 502, 503) and attempt < 3:
                 time.sleep(35)  # cross the free-tier per-minute rate window
                 continue
             raise
-        if "handling a lot of requests" in (r.get("reply") or "").lower() and attempt < 3:
+        if "couldn't respond just now" in (r.get("reply") or "").lower() and attempt < 3:
             time.sleep(35)
             continue
         time.sleep(3)  # gentle spacing between agent calls
@@ -76,28 +77,58 @@ def main():
     check("create_goal actually creates the goal", len(match) == 1, f"found {len(match)}")
     gid = match[0]["id"] if match else None
 
-    # 2) suggest_for_role returns chips and does NOT create a goal
+    # 2) NO-GOAL suggestions = normal chat: no chips, items listed in prose
     before = len(_req("/api/goals/", token=token))
-    r = chat("Get suggestions for Data Scientist. Do not create a goal.", token)
+    r = chat("Give me suggestions for Data Scientist. Do not create a goal.", token)
     after = len(_req("/api/goals/", token=token))
-    check("suggest_for_role returns suggestions", len(r.get("suggestions", [])) > 0,
-          f"{len(r.get('suggestions', []))} suggestions")
-    check("suggest_for_role does NOT create a goal", after == before, f"{before}->{after}")
+    check("no-goal suggest returns NO chips", len(r.get("suggestions", [])) == 0,
+          f"{len(r.get('suggestions', []))} chips")
+    check("no-goal suggest lists items in text",
+          any(w in (r.get("reply") or "") for w in
+              ["Skills:", "Courses:", "Tools:", "Python", "Machine"]))
+    check("suggest does NOT create a goal", after == before, f"{before}->{after}")
 
-    # 3) add a path + skill
+    # 3) WITH-GOAL suggestions = selectable chips + goal_id echoed
+    if gid:
+        r = chat("Suggest skills and tools for this goal.", token, goal_id=gid)
+        check("with-goal suggest returns chips", len(r.get("suggestions", [])) > 0,
+              f"{len(r.get('suggestions', []))} chips")
+        check("with-goal suggest echoes goal_id", r.get("goal_id") == gid,
+              f"got {r.get('goal_id')}")
+
+    # 4) add a path + skill
     if gid:
         chat(f'In goal id {gid}, create a learning path called "Skills" and add a '
              f'skill called "Databases" to it. Do it now.', token)
         paths = _req(f"/api/paths/goal/{gid}", token=token)
         skills = [p for p in paths if p["title"].lower() == "skills"]
         check("agent creates the path", len(skills) >= 1)
-        has_step = False
+        step_id = None
         if skills:
             steps = _req(f"/api/steps/path/{skills[0]['id']}", token=token)
-            has_step = any(s["title"] == "Databases" for s in steps)
-        check("agent adds the skill (step)", has_step)
+            hit = [s for s in steps if s["title"] == "Databases"]
+            step_id = hit[0]["id"] if hit else None
+        check("agent adds the skill (step)", step_id is not None)
 
-    # 4) delete_goal actually deletes (the reported bug)
+    # 5) goal CONTEXT: add without naming the goal, using the goal_id context
+    if gid:
+        chat('Add a skill called "SQL" to my Skills path.', token, goal_id=gid)
+        paths = _req(f"/api/paths/goal/{gid}", token=token)
+        skills = [p for p in paths if p["title"].lower() == "skills"]
+        has_sql = False
+        if skills:
+            steps = _req(f"/api/steps/path/{skills[0]['id']}", token=token)
+            has_sql = any(s["title"] == "SQL" for s in steps)
+        check("adds via goal-context (no goal named)", has_sql)
+
+    # 6) complete a step
+    if gid and step_id:
+        chat(f"Mark the Databases step (id {step_id}) as done.", token, goal_id=gid)
+        steps = _req(f"/api/steps/path/{skills[0]['id']}", token=token)
+        done = any(s["id"] == step_id and s["is_done"] for s in steps)
+        check("complete_step marks the step done", done)
+
+    # 7) delete_goal actually deletes (the originally reported bug)
     if gid:
         chat(f"Delete the goal with id {gid}. Do it now.", token)
         goals_after = _req("/api/goals/", token=token)
