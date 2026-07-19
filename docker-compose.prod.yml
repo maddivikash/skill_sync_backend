@@ -12,8 +12,8 @@ services:
     environment:
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
       APP_ENV: prod
-      # Allow the HTTPS frontend origin.
-      CORS_ORIGINS: "https://ascenddaily.in"
+      # Same-origin now (relative /api), but list both hosts for safety.
+      CORS_ORIGINS: "https://ascenddaily.in,https://skillsync-io.duckdns.org"
       # Password-reset links point at the live frontend.
       FRONTEND_URL: "https://ascenddaily.in"
       # AI coach (Groq). Set GROQ_API_KEY in the host .env to enable it.
@@ -30,8 +30,9 @@ services:
   web:
     build:
       args:
-        # Same-origin API under /api (Caddy strips the prefix). No CORS/port.
-        VITE_API_URL: "https://ascenddaily.in/api"
+        # Relative same-origin API — works on ANY domain the app is served from
+        # (ascenddaily.in or the duckdns fallback). Caddy strips /api.
+        VITE_API_URL: "/api"
     restart: unless-stopped
 
   caddy:

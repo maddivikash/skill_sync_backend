@@ -24,6 +24,7 @@ export default function StepItem({ step, onChanged }: Props) {
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [newTask, setNewTask] = useState("");
   const [adding, setAdding] = useState(false);
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const loadTasks = useCallback(async () => {
@@ -145,21 +146,41 @@ export default function StepItem({ step, onChanged }: Props) {
             </ul>
           )}
 
-          <form onSubmit={addTask} className="inline-form">
-            <input
-              type="text"
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-              placeholder="Add a task…"
-            />
+          {showTaskForm ? (
+            <form onSubmit={addTask} className="inline-form">
+              <input
+                type="text"
+                value={newTask}
+                onChange={(e) => setNewTask(e.target.value)}
+                placeholder="Add a task…"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="btn btn--soft btn--sm"
+                disabled={adding || !newTask.trim()}
+              >
+                {adding ? "Adding…" : "Add"}
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  setShowTaskForm(false);
+                  setNewTask("");
+                }}
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
             <button
-              type="submit"
-              className="btn btn--soft btn--sm"
-              disabled={adding || !newTask.trim()}
+              className="btn btn--soft btn--sm add-task-btn"
+              onClick={() => setShowTaskForm(true)}
             >
-              {adding ? "Adding…" : "Add"}
+              + Add task
             </button>
-          </form>
+          )}
         </div>
       )}
     </div>

@@ -1,15 +1,15 @@
 # Caddy reverse proxy — automatic HTTPS via Let's Encrypt.
-# Single origin: the SPA on / and the API under /api/* (same host, port 443).
+# Serves the SPA on / and proxies /api/* to the backend (same origin).
+# Both hostnames are served: ascenddaily.in (primary; cert auto-issues once
+# its DNS resolves) and the duckdns fallback (keeps the app live meanwhile).
 {
 	email vickyvikashmaddi@gmail.com
 }
 
-ascenddaily.in {
-	# API: strip the /api prefix, forward to the backend container.
+ascenddaily.in, skillsync-io.duckdns.org {
 	handle_path /api/* {
 		reverse_proxy api:8000
 	}
-	# Everything else: the frontend SPA.
 	handle {
 		reverse_proxy web:80
 	}
