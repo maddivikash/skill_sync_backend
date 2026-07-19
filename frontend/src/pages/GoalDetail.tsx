@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import {
   createPath,
@@ -27,8 +27,8 @@ export default function GoalDetail() {
 
   const [params, setParams] = useSearchParams();
   const [showWizard, setShowWizard] = useState(false);
-  // Accordion allows MULTIPLE paths open at once.
-  const [openPathIds, setOpenPathIds] = useState<Set<number>>(new Set());
+  // Learning paths shown as tabs — one active at a time.
+  const [activePathId, setActivePathId] = useState<number | null>(null);
 
   // Auto-open the suggestions wizard when arriving from goal creation.
   useEffect(() => {
@@ -40,17 +40,15 @@ export default function GoalDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Default the first path open once; drop ids for paths that no longer exist.
-  const didInitOpen = useRef(false);
+  // Default to the first path; keep the active tab valid as paths change.
   useEffect(() => {
-    setOpenPathIds((cur) => {
-      const valid = new Set([...cur].filter((id) => paths.some((p) => p.id === id)));
-      if (!didInitOpen.current && valid.size === 0 && paths.length) {
-        valid.add(paths[0].id);
-        didInitOpen.current = true;
-      }
-      return valid;
-    });
+    setActivePathId((cur) =>
+      cur && paths.some((p) => p.id === cur)
+        ? cur
+        : paths.length
+        ? paths[0].id
+        : null
+    );
   }, [paths]);
 
   const loadPaths = useCallback(async () => {
@@ -100,6 +98,8 @@ export default function GoalDetail() {
       setSaving(false);
     }
   }
+
+  const activePath = paths.find((p) => p.id === activePathId) ?? paths[0];
 
   if (loading) {
     return (
@@ -241,22 +241,30 @@ export default function GoalDetail() {
           </p>
         </div>
       ) : (
-        <div className="path-list">
-          {paths.map((path) => (
+        <div className="path-tabs-wrap">
+          <div className="path-tabs" role="tablist" aria-label="Learning paths">
+            {paths.map((path) => (
+              <button
+                key={path.id}
+                role="tab"
+                aria-selected={activePathId === path.id}
+                className={`path-tab ${activePathId === path.id ? "is-active" : ""}`}
+                onClick={() => setActivePathId(path.id)}
+              >
+                {path.title}
+              </button>
+            ))}
+          </div>
+          {activePath && (
             <PathSection
-              key={`${path.id}-${pathsVersion}`}
-              path={path}
-              expanded={openPathIds.has(path.id)}
-              onToggle={() =>
-                setOpenPathIds((cur) => {
-                  const next = new Set(cur);
-                  next.has(path.id) ? next.delete(path.id) : next.add(path.id);
-                  return next;
-                })
-              }
+              key={`${activePath.id}-${pathsVersion}`}
+              path={activePath}
+              expanded
+              onToggle={() => {}}
               onDeleted={loadPaths}
+              asTab
             />
-          ))}
+          )}
         </div>
       )}
     </div>

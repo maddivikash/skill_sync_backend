@@ -9,7 +9,7 @@ import {
   type ActivitySummary,
 } from "../lib/activity";
 
-const WEEKS = 14; // ~3.5 months of history
+const WEEKS = 5; // ~1 month of history
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -155,7 +155,7 @@ export default function ActivitySidebar() {
       <div className="activity__heat">
         <div className="activity__heat-head">
           <span>Activity</span>
-          <span className="activity__heat-sub">last {WEEKS} weeks</span>
+          <span className="activity__heat-sub">this month</span>
         </div>
         <div className="activity__heat-body">
           <div className="activity__weekdays" aria-hidden="true">

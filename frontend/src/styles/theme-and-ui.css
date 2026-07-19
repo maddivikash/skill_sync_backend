@@ -1141,6 +1141,95 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   flex-shrink: 0;
 }
 .coach__close:hover { background: var(--surface-2); color: var(--text); }
+.coach__head-main { min-width: 0; }
+.coach__head-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.coach__icon {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 1rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.coach__icon:hover,
+.coach__icon.is-active { background: var(--surface-2); color: var(--brand); }
+.coach__sessions {
+  max-height: 42%;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 6px;
+}
+.coach__session {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+.coach__session.is-active { background: var(--brand-soft); }
+.coach__session-title {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 9px 10px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.coach__session-del {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 1.15rem;
+  line-height: 1;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.coach__session-del:hover { background: var(--danger-soft); color: var(--danger); }
+
+/* ---------- Learning-path tabs ---------- */
+.path-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.path-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 11px 18px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: 8px 8px 0 0;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+.path-tab:hover { color: var(--text); background: var(--surface-2); }
+.path-tab.is-active { color: var(--brand); border-bottom-color: var(--brand); }
+.path-card__toggle--static { cursor: default; }
+
+/* Kill hover underline on the amber/terracotta XP card link */
+.activity__xp-card--link,
+.activity__xp-card--link:hover { text-decoration: none; }
 .coach__title {
   display: block;
   font-family: var(--font-display);

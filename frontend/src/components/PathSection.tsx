@@ -17,9 +17,11 @@ interface Props {
   onToggle: () => void;
   /** Called when this path is deleted so the parent can refetch. */
   onDeleted: () => void;
+  /** Render inside a tab panel (no collapse toggle; body always shown). */
+  asTab?: boolean;
 }
 
-export default function PathSection({ path, expanded, onToggle, onDeleted }: Props) {
+export default function PathSection({ path, expanded, onToggle, onDeleted, asTab }: Props) {
   const confirm = useConfirm();
   const { success, error } = useToast();
   const [steps, setSteps] = useState<Step[]>([]);
@@ -108,21 +110,32 @@ export default function PathSection({ path, expanded, onToggle, onDeleted }: Pro
   return (
     <div className="path-card">
       <div className="path-card__head">
-        <button
-          className="path-card__toggle"
-          onClick={onToggle}
-          aria-expanded={expanded}
-        >
-          <span className={`chevron ${expanded ? "chevron--open" : ""}`} aria-hidden="true">
-            ▸
-          </span>
-          <span>
-            <span className="path-card__title">{path.title}</span>
-            {path.description && (
-              <span className="path-card__desc">{path.description}</span>
-            )}
-          </span>
-        </button>
+        {asTab ? (
+          <div className="path-card__toggle path-card__toggle--static">
+            <span>
+              <span className="path-card__title">{path.title}</span>
+              {path.description && (
+                <span className="path-card__desc">{path.description}</span>
+              )}
+            </span>
+          </div>
+        ) : (
+          <button
+            className="path-card__toggle"
+            onClick={onToggle}
+            aria-expanded={expanded}
+          >
+            <span className={`chevron ${expanded ? "chevron--open" : ""}`} aria-hidden="true">
+              ▸
+            </span>
+            <span>
+              <span className="path-card__title">{path.title}</span>
+              {path.description && (
+                <span className="path-card__desc">{path.description}</span>
+              )}
+            </span>
+          </button>
+        )}
         <div className="path-card__head-right">
           <span className="path-card__count">
             {doneSteps}/{steps.length} steps
