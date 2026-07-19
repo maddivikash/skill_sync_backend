@@ -23,4 +23,4 @@ exec gunicorn app.main:app \
   --bind "0.0.0.0:${PORT:-8000}" \
   --access-logfile - \
   --error-logfile - \
-  --timeout 60
+  --timeout 120

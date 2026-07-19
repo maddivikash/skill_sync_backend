@@ -12,6 +12,12 @@ class ChatRequest(BaseModel):
     messages: List[ChatMessage]
 
 
+class ChatSuggestion(BaseModel):
+    name: str
+    category: str
+
+
 class ChatReply(BaseModel):
     reply: str
     changed: bool = False  # true if the agent modified the user's data (UI should refresh)
+    suggestions: List[ChatSuggestion] = []  # selectable chips to render in chat

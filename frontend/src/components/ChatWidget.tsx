@@ -63,6 +63,9 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<
+    { name: string; category: string }[]
+  >([]);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const active = sessions.find((s) => s.id === activeId) ?? sessions[0];
@@ -111,11 +114,11 @@ export default function ChatWidget() {
     });
   }
 
-  async function handleSend(e: FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function sendMessage(raw: string) {
+    const text = raw.trim();
     if (!text || busy) return;
     setError(null);
+    setSuggestions([]);
     const userMsg: ChatMsg = { role: "user", content: text };
     const hadUser = active.messages.some((m) => m.role === "user");
     updateActive((s) => ({
@@ -128,12 +131,13 @@ export default function ChatWidget() {
     setInput("");
     setBusy(true);
     try {
-      const { reply, changed } = await sendChat(history);
+      const { reply, changed, suggestions: sug } = await sendChat(history);
       updateActive((s) => ({
         ...s,
         messages: [...s.messages, { role: "assistant", content: reply }],
         updated: Date.now(),
       }));
+      setSuggestions(sug ?? []);
       // If the coach changed data (created a goal/task/etc.), refresh the app UI.
       if (changed) window.dispatchEvent(new Event("skillsync:data-changed"));
     } catch (err) {
@@ -143,6 +147,11 @@ export default function ChatWidget() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function handleSend(e: FormEvent) {
+    e.preventDefault();
+    sendMessage(input);
   }
 
   return (
@@ -232,6 +241,20 @@ export default function ChatWidget() {
             {busy && (
               <div className="coach__msg coach__msg--assistant coach__msg--typing">
                 Thinking…
+              </div>
+            )}
+            {!busy && suggestions.length > 0 && (
+              <div className="coach__chips">
+                {suggestions.map((sg, i) => (
+                  <button
+                    key={i}
+                    className="coach__chip"
+                    onClick={() => sendMessage(`Add "${sg.name}"`)}
+                    title={`Add ${sg.name}`}
+                  >
+                    + {sg.name}
+                  </button>
+                ))}
               </div>
             )}
             {error && <div className="coach__error">{error}</div>}

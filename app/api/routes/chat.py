@@ -5,6 +5,8 @@ tasks, mark things done). Every tool is scoped to the authenticated user, so
 the coach can only ever touch that user's data.
 """
 import json
+import logging
+import time
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
@@ -22,9 +24,11 @@ from app.schemas.chat import ChatReply, ChatRequest
 from app.services import catalog_service
 
 WRITE_TOOLS = {"create_goal", "create_path", "add_step", "create_task",
-               "complete_task", "complete_step"}
+               "complete_task", "complete_step",
+               "delete_goal", "delete_path", "delete_step", "delete_task"}
 
 router = APIRouter()
+logger = logging.getLogger("skillsync.chat")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MAX_TOOL_ROUNDS = 6
@@ -37,9 +41,19 @@ SYSTEM_PROMPT = (
     "- Only help with learning: skills, courses, study plans, roles, and using Ascend.\n"
     "- To act on something, first look it up (list_goals → list_paths → list_steps → "
     "list_tasks) to get the right id, then call the action tool.\n"
-    "- To START a new goal: call create_goal with the role (default 5 hrs/week, 12 weeks). "
-    "Then call suggest_for_role and offer a FEW options at a time (not a huge list); when "
-    "the user picks, add them with create_path/add_step. Keep it conversational.\n"
+    "- To START a new goal: you MUST know the target role first. If the user hasn't "
+    "clearly stated it (e.g. they just said 'create a new goal'), ASK 'What role or "
+    "subject do you want to focus on?' and WAIT for their answer — NEVER invent or "
+    "assume a role. Once you have it, call create_goal (default 5 hrs/week, 12 weeks), "
+    "then suggest_for_role and offer a FEW options at a time (not a huge list); when the "
+    "user picks, add them with create_path/add_step. Keep it conversational.\n"
+    "- Only call create_goal when the user EXPLICITLY asks to create/start a goal. "
+    "'Get suggestions for X' or 'what should I learn for X' means call suggest_for_role "
+    "and show them — do NOT create a goal. Never create the same goal twice.\n"
+    "- To delete, use delete_goal/delete_path/delete_step/delete_task. CRITICAL: never "
+    "claim you created, deleted, or completed anything unless the tool actually returned "
+    "a success result in this turn. If a tool returns an error or you have no tool for "
+    "the request, say so honestly — never pretend an action succeeded.\n"
     "- 'Add a skill/course/tool' = add a step to the matching learning path (Skills/"
     "Courses/Tools). If that path doesn't exist, create it with create_path first.\n"
     "- After acting, tell the user in one short sentence what you did.\n"
@@ -117,6 +131,30 @@ TOOLS = [
         "description": "Mark a step as done.",
         "parameters": {"type": "object", "properties": {
             "step_id": {"type": "integer"}}, "required": ["step_id"]},
+    }},
+    {"type": "function", "function": {
+        "name": "delete_goal",
+        "description": "Delete a goal and everything under it.",
+        "parameters": {"type": "object", "properties": {
+            "goal_id": {"type": "integer"}}, "required": ["goal_id"]},
+    }},
+    {"type": "function", "function": {
+        "name": "delete_path",
+        "description": "Delete a learning path.",
+        "parameters": {"type": "object", "properties": {
+            "path_id": {"type": "integer"}}, "required": ["path_id"]},
+    }},
+    {"type": "function", "function": {
+        "name": "delete_step",
+        "description": "Delete a step.",
+        "parameters": {"type": "object", "properties": {
+            "step_id": {"type": "integer"}}, "required": ["step_id"]},
+    }},
+    {"type": "function", "function": {
+        "name": "delete_task",
+        "description": "Delete a task.",
+        "parameters": {"type": "object", "properties": {
+            "task_id": {"type": "integer"}}, "required": ["task_id"]},
     }},
 ]
 
@@ -227,6 +265,34 @@ def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
             s.is_done = True; db.commit()
             return {"completed_step": {"id": s.id, "title": s.title}}
 
+        if name == "delete_goal":
+            g = _owned_goal(db, uid, args["goal_id"])
+            if not g:
+                return {"error": "goal not found"}
+            g.is_deleted = True; db.commit()
+            return {"deleted_goal": {"id": g.id, "role": g.role}}
+
+        if name == "delete_path":
+            p = _owned_path(db, uid, args["path_id"])
+            if not p:
+                return {"error": "path not found"}
+            p.is_deleted = True; db.commit()
+            return {"deleted_path": {"id": p.id}}
+
+        if name == "delete_step":
+            s = _owned_step(db, uid, args["step_id"])
+            if not s:
+                return {"error": "step not found"}
+            db.delete(s); db.commit()
+            return {"deleted_step": {"id": args["step_id"]}}
+
+        if name == "delete_task":
+            t = _owned_task(db, uid, args["task_id"])
+            if not t:
+                return {"error": "task not found"}
+            db.delete(t); db.commit()
+            return {"deleted_task": {"id": args["task_id"]}}
+
         return {"error": f"unknown tool {name}"}
     except Exception as exc:
         return {"error": str(exc)}
@@ -243,21 +309,33 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
 
     headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}"}
     changed = False
+    suggestions: list = []
     try:
         for _ in range(MAX_TOOL_ROUNDS):
-            resp = httpx.post(GROQ_URL, headers=headers, timeout=45, json={
-                "model": settings.GROQ_MODEL,
-                "messages": messages,
-                "tools": TOOLS,
-                "tool_choice": "auto",
-                "temperature": 0.2,
-                "max_tokens": 900,
-            })
+            resp = None
+            for attempt in range(3):  # retry Groq rate limits
+                resp = httpx.post(GROQ_URL, headers=headers, timeout=45, json={
+                    "model": settings.GROQ_MODEL,
+                    "messages": messages,
+                    "tools": TOOLS,
+                    "tool_choice": "auto",
+                    "temperature": 0.2,
+                    "max_tokens": 900,
+                })
+                if resp.status_code == 429 and attempt < 2:
+                    time.sleep(3)
+                    continue
+                break
+            if resp.status_code == 429:
+                return {"reply": "I'm handling a lot of requests right now — please wait "
+                                 "a few seconds and try again.",
+                        "changed": changed, "suggestions": suggestions}
             resp.raise_for_status()
             msg = resp.json()["choices"][0]["message"]
             tool_calls = msg.get("tool_calls")
             if not tool_calls:
-                return {"reply": (msg.get("content") or "").strip(), "changed": changed}
+                return {"reply": (msg.get("content") or "").strip(),
+                        "changed": changed, "suggestions": suggestions}
 
             messages.append({"role": "assistant", "content": msg.get("content") or "",
                              "tool_calls": tool_calls})
@@ -270,11 +348,17 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                 if fname in WRITE_TOOLS:
                     changed = True
                 result = run_tool(fname, args, db, current_user.id)
+                # Surface suggestions as selectable chips in the chat.
+                if fname == "suggest_for_role" and isinstance(result, dict):
+                    suggestions = [{"name": nm, "category": cat}
+                                   for cat in ("skill", "course", "tool", "project")
+                                   for nm in (result.get(cat) or [])]
                 messages.append({"role": "tool", "tool_call_id": tc["id"],
                                  "content": json.dumps(result)})
         return {"reply": "I couldn't finish that — try rephrasing or breaking it into steps.",
-                "changed": changed}
+                "changed": changed, "suggestions": suggestions}
     except HTTPException:
         raise
     except Exception:
+        logger.exception("chat agent failed")
         raise HTTPException(status_code=502, detail="The coach is unavailable right now. Try again.")
