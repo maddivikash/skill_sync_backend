@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { createPath, createStep, getSuggestions } from "../api/endpoints";
+import {
+  createPath,
+  createStep,
+  deletePath,
+  deleteStep,
+  getSuggestions,
+} from "../api/endpoints";
 import { logActivity } from "../lib/activity";
 import { useToast } from "../context/ui";
 import Modal from "./Modal";
@@ -36,14 +42,17 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
   const [loading, setLoading] = useState(true);
   const [idx, setIdx] = useState(0);
   const [busy, setBusy] = useState<number | null>(null);
-  const [added, setAdded] = useState<Set<number>>(new Set());
+  // Track what was created for each catalog item so it can be removed/undone.
+  const [added, setAdded] = useState<
+    Record<number, { kind: "step" | "path"; id: number }>
+  >({});
   const pathCache = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!open) return;
     setLoading(true);
     setIdx(0);
-    setAdded(new Set());
+    setAdded({});
     pathCache.current = {};
     getSuggestions(role)
       .then(setData)
@@ -79,6 +88,7 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
   async function add(s: CatalogItem) {
     setBusy(s.id);
     try {
+      let entry: { kind: "step" | "path"; id: number };
       if (step.cat === "project") {
         const p = await createPath(goalId, {
           title: s.name,
@@ -90,17 +100,46 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
           }
         }
         logActivity("project");
+        entry = { kind: "path", id: p.id };
       } else {
         const pathId = await ensurePath(step.cat, step.plural);
-        const desc = step.cat === "course" ? courseMeta(s) : s.description || undefined;
-        await createStep(pathId, { title: s.name, description: desc || undefined });
+        // Keep the course link in the description so it stays clickable.
+        const desc =
+          step.cat === "course"
+            ? [courseMeta(s), s.url].filter(Boolean).join(" · ")
+            : s.description || undefined;
+        const created = await createStep(pathId, {
+          title: s.name,
+          description: desc || undefined,
+        });
         logActivity("step");
+        entry = { kind: "step", id: created.id };
       }
-      setAdded((prev) => new Set(prev).add(s.id));
+      setAdded((prev) => ({ ...prev, [s.id]: entry }));
       success(`Added "${s.name}"`);
       onAdded();
     } catch (err) {
       error(err instanceof Error ? err.message : "Failed to add.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function remove(s: CatalogItem) {
+    const entry = added[s.id];
+    if (!entry) return;
+    setBusy(s.id);
+    try {
+      if (entry.kind === "path") await deletePath(entry.id);
+      else await deleteStep(entry.id);
+      setAdded((prev) => {
+        const next = { ...prev };
+        delete next[s.id];
+        return next;
+      });
+      onAdded();
+    } catch (err) {
+      error(err instanceof Error ? err.message : "Failed to remove.");
     } finally {
       setBusy(null);
     }
@@ -149,7 +188,7 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
               <p className="muted-note">No suggestions for this category.</p>
             )}
             {items.map((s) => {
-              const isAdded = added.has(s.id);
+              const isAdded = !!added[s.id];
               return (
                 <div key={s.id} className={`suggest-card ${isAdded ? "is-added" : ""}`}>
                   <div className="suggest-card__body">
@@ -174,13 +213,24 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
                       </a>
                     )}
                   </div>
-                  <button
-                    className={`btn btn--sm ${isAdded ? "btn--added" : "btn--soft"}`}
-                    disabled={busy === s.id || isAdded}
-                    onClick={() => add(s)}
-                  >
-                    {isAdded ? "✓ Added" : busy === s.id ? "Adding…" : "+ Add"}
-                  </button>
+                  {isAdded ? (
+                    <button
+                      className="btn btn--sm btn--added"
+                      disabled={busy === s.id}
+                      onClick={() => remove(s)}
+                      title="Remove"
+                    >
+                      {busy === s.id ? "…" : "✓ Added ✕"}
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn--sm btn--soft"
+                      disabled={busy === s.id}
+                      onClick={() => add(s)}
+                    >
+                      {busy === s.id ? "Adding…" : "+ Add"}
+                    </button>
+                  )}
                 </div>
               );
             })}

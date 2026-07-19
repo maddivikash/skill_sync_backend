@@ -63,7 +63,9 @@ export interface ChatMsg {
   role: "user" | "assistant";
   content: string;
 }
-export function sendChat(messages: ChatMsg[]): Promise<{ reply: string }> {
+export function sendChat(
+  messages: ChatMsg[]
+): Promise<{ reply: string; changed?: boolean }> {
   return apiFetch("/api/chat", { method: "POST", body: { messages } });
 }
 

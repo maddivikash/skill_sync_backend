@@ -10,6 +10,32 @@ import { useConfirm, useToast } from "../context/ui";
 import type { Step, Task } from "../types";
 import TaskRow from "./TaskRow";
 
+// Render any URL in a description as a clickable link (e.g. course links).
+function linkifyDesc(text: string) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) => {
+    if (/^https?:\/\//.test(part)) {
+      let label = part;
+      try {
+        label = new URL(part).hostname.replace(/^www\./, "");
+      } catch {
+        /* keep raw */
+      }
+      return (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="step__link"
+        >
+          {label} ↗
+        </a>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 interface Props {
   step: Step;
   /** Notify the path level that step/task data changed (for refetch). */
@@ -129,7 +155,7 @@ export default function StepItem({ step, onChanged }: Props) {
       </div>
 
       {step.description && expanded && (
-        <p className="step__desc">{step.description}</p>
+        <p className="step__desc">{linkifyDesc(step.description)}</p>
       )}
 
       {expanded && (

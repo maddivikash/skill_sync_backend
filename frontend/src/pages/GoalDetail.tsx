@@ -79,6 +79,16 @@ export default function GoalDetail() {
     load();
   }, [goalId, load]);
 
+  // Refresh when the AI coach changes data.
+  useEffect(() => {
+    const h = () => {
+      loadPaths();
+      setPathsVersion((v) => v + 1);
+    };
+    window.addEventListener("skillsync:data-changed", h);
+    return () => window.removeEventListener("skillsync:data-changed", h);
+  }, [loadPaths]);
+
   async function addPath(e: FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;

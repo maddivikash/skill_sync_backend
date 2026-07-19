@@ -1226,6 +1226,7 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .path-tab:hover { color: var(--text); background: var(--surface-2); }
 .path-tab.is-active { color: var(--brand); border-bottom-color: var(--brand); }
 .path-card__toggle--static { cursor: default; }
+.step__link { color: var(--brand); font-weight: 600; white-space: nowrap; }
 
 /* Kill hover underline on the amber/terracotta XP card link */
 .activity__xp-card--link,

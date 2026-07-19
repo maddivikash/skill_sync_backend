@@ -19,6 +19,10 @@ from app.models.step import Step
 from app.models.task import Task
 from app.models.user import User
 from app.schemas.chat import ChatReply, ChatRequest
+from app.services import catalog_service
+
+WRITE_TOOLS = {"create_goal", "create_path", "add_step", "create_task",
+               "complete_task", "complete_step"}
 
 router = APIRouter()
 
@@ -33,6 +37,9 @@ SYSTEM_PROMPT = (
     "- Only help with learning: skills, courses, study plans, roles, and using Ascend.\n"
     "- To act on something, first look it up (list_goals → list_paths → list_steps → "
     "list_tasks) to get the right id, then call the action tool.\n"
+    "- To START a new goal: call create_goal with the role (default 5 hrs/week, 12 weeks). "
+    "Then call suggest_for_role and offer a FEW options at a time (not a huge list); when "
+    "the user picks, add them with create_path/add_step. Keep it conversational.\n"
     "- 'Add a skill/course/tool' = add a step to the matching learning path (Skills/"
     "Courses/Tools). If that path doesn't exist, create it with create_path first.\n"
     "- After acting, tell the user in one short sentence what you did.\n"
@@ -63,6 +70,20 @@ TOOLS = [
         "description": "List the tasks under a step.",
         "parameters": {"type": "object", "properties": {
             "step_id": {"type": "integer"}}, "required": ["step_id"]},
+    }},
+    {"type": "function", "function": {
+        "name": "create_goal",
+        "description": "Create a new learning goal for a target role. Defaults: 5 hrs/week, 12 weeks unless the user specifies.",
+        "parameters": {"type": "object", "properties": {
+            "role": {"type": "string"},
+            "hours_per_week": {"type": "integer"},
+            "duration_weeks": {"type": "integer"}}, "required": ["role"]},
+    }},
+    {"type": "function", "function": {
+        "name": "suggest_for_role",
+        "description": "Get suggested skills, courses, tools and projects for a role (from the catalog, or AI-generated for custom roles like UPSC). Use to recommend what to add.",
+        "parameters": {"type": "object", "properties": {
+            "role": {"type": "string"}}, "required": ["role"]},
     }},
     {"type": "function", "function": {
         "name": "create_path",
@@ -151,6 +172,26 @@ def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
                 return {"error": "step not found"}
             return {"tasks": [{"id": t.id, "title": t.title, "done": t.is_done} for t in s.tasks]}
 
+        if name == "create_goal":
+            g = Goal(owner_id=uid, role=str(args["role"])[:100],
+                     hours_per_week=int(args.get("hours_per_week") or 5),
+                     duration_weeks=int(args.get("duration_weeks") or 12))
+            db.add(g); db.commit(); db.refresh(g)
+            return {"created_goal": {"id": g.id, "role": g.role}}
+
+        if name == "suggest_for_role":
+            data = catalog_service.get_suggestions(db, str(args.get("role", "")))
+            grouped = data.get("items", {}) or {}
+            out = {}
+            for cat in ("skill", "course", "tool", "project"):
+                names = []
+                for it in (grouped.get(cat, []) or [])[:6]:
+                    n = it.get("name") if isinstance(it, dict) else getattr(it, "name", None)
+                    if n:
+                        names.append(n)
+                out[cat] = names
+            return out
+
         if name == "create_path":
             if not _owned_goal(db, uid, args["goal_id"]):
                 return {"error": "goal not found"}
@@ -201,6 +242,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
     messages += [{"role": m.role, "content": m.content} for m in payload.messages][-12:]
 
     headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}"}
+    changed = False
     try:
         for _ in range(MAX_TOOL_ROUNDS):
             resp = httpx.post(GROQ_URL, headers=headers, timeout=45, json={
@@ -215,7 +257,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
             msg = resp.json()["choices"][0]["message"]
             tool_calls = msg.get("tool_calls")
             if not tool_calls:
-                return {"reply": (msg.get("content") or "").strip()}
+                return {"reply": (msg.get("content") or "").strip(), "changed": changed}
 
             messages.append({"role": "assistant", "content": msg.get("content") or "",
                              "tool_calls": tool_calls})
@@ -224,10 +266,14 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                     args = json.loads(tc["function"].get("arguments") or "{}")
                 except json.JSONDecodeError:
                     args = {}
-                result = run_tool(tc["function"]["name"], args, db, current_user.id)
+                fname = tc["function"]["name"]
+                if fname in WRITE_TOOLS:
+                    changed = True
+                result = run_tool(fname, args, db, current_user.id)
                 messages.append({"role": "tool", "tool_call_id": tc["id"],
                                  "content": json.dumps(result)})
-        return {"reply": "I couldn't finish that — try rephrasing or breaking it into steps."}
+        return {"reply": "I couldn't finish that — try rephrasing or breaking it into steps.",
+                "changed": changed}
     except HTTPException:
         raise
     except Exception:

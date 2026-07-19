@@ -128,12 +128,14 @@ export default function ChatWidget() {
     setInput("");
     setBusy(true);
     try {
-      const { reply } = await sendChat(history);
+      const { reply, changed } = await sendChat(history);
       updateActive((s) => ({
         ...s,
         messages: [...s.messages, { role: "assistant", content: reply }],
         updated: Date.now(),
       }));
+      // If the coach changed data (created a goal/task/etc.), refresh the app UI.
+      if (changed) window.dispatchEvent(new Event("skillsync:data-changed"));
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "The coach is unavailable right now."

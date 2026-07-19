@@ -14,3 +14,4 @@ class ChatRequest(BaseModel):
 
 class ChatReply(BaseModel):
     reply: str
+    changed: bool = False  # true if the agent modified the user's data (UI should refresh)

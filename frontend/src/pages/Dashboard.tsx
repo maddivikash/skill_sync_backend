@@ -50,6 +50,13 @@ export default function Dashboard() {
     load();
   }, [load]);
 
+  // Refresh when the AI coach changes data.
+  useEffect(() => {
+    const h = () => load();
+    window.addEventListener("skillsync:data-changed", h);
+    return () => window.removeEventListener("skillsync:data-changed", h);
+  }, [load]);
+
   useEffect(() => {
     listRoles().then(setRoles).catch(() => setRoles([]));
   }, []);
