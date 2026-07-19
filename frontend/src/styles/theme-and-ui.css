@@ -1231,8 +1231,14 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .activity__xp-card--link,
 .activity__xp-card--link:hover { text-decoration: none; }
 
-/* ---------- Activity: month calendar that fills the card width ---------- */
-.cal { display: flex; flex-direction: column; gap: 6px; }
+/* ---------- Activity: compact month calendar, centered ---------- */
+.cal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 290px;   /* cap cell size (~34px); balanced margins */
+  margin: 0 auto;
+}
 .cal__head,
 .cal__grid {
   display: grid;
@@ -1244,7 +1250,7 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   width: 100%;
   height: auto;
   aspect-ratio: 1 / 1;
-  border-radius: 7px;
+  border-radius: 6px;
 }
 .coach__title {
   display: block;
