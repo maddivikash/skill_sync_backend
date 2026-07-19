@@ -37,6 +37,27 @@ export async function login(
   return tokens;
 }
 
+export function requestPasswordReset(
+  email: string
+): Promise<{ message: string }> {
+  return apiFetch("/api/password-reset/request", {
+    method: "POST",
+    body: { email },
+    auth: false,
+  });
+}
+
+export function confirmPasswordReset(
+  token: string,
+  new_password: string
+): Promise<{ message: string }> {
+  return apiFetch("/api/password-reset/confirm", {
+    method: "POST",
+    body: { token, new_password },
+    auth: false,
+  });
+}
+
 export function getMe(): Promise<User> {
   return apiFetch<User>("/api/users/me");
 }

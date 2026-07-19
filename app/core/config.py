@@ -31,5 +31,17 @@ class Settings:
         if o.strip()
     ]
 
+    # Where the frontend lives — used to build password-reset links.
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    RESET_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES", 30))
+
+    # Email (SMTP). If unset, the app runs in "dev mode" and logs reset links
+    # instead of emailing them — works with zero setup / zero cost.
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USER: str = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "SkillSync <no-reply@skillsync.local>")
+
 
 settings = Settings()

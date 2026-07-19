@@ -14,6 +14,8 @@ services:
       APP_ENV: prod
       # Allow the HTTPS frontend origin (and the raw IP during transition).
       CORS_ORIGINS: "https://skillsync-io.duckdns.org,http://3.109.158.246"
+      # Password-reset links point at the live frontend.
+      FRONTEND_URL: "https://skillsync-io.duckdns.org"
     restart: unless-stopped
 
   web:

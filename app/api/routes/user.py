@@ -1,10 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.user import PasswordChange, UserCreate, UserOut
+from app.schemas.user import (
+    PasswordChange,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    UserCreate,
+    UserOut,
+)
 from app.crud.user import create_user, verify_password
 from fastapi.security import OAuth2PasswordRequestForm
-from app.core.auth import create_access_token, create_refresh_token, decode_access_token
+from app.core.auth import (
+    create_access_token,
+    create_refresh_token,
+    create_reset_token,
+    decode_access_token,
+)
+from app.core.config import settings
 from app.core.deps import get_current_user
+from app.core.email import send_reset_email
 from app.db.deps import get_db
 from app.crud import user as crud_user
 from app.models.user import User
@@ -48,6 +61,29 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
         "access_token": new_access_token,
         "token_type": "bearer"
     }
+
+
+@router.post("/password-reset/request", response_model=dict)
+def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    user = crud_user.get_user_by_email(db, payload.email)
+    if user:
+        token = create_reset_token(user.email)
+        reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+        send_reset_email(user.email, reset_link)
+    # Generic response either way — never reveal whether an email is registered.
+    return {"message": "If that email is registered, a reset link has been sent."}
+
+
+@router.post("/password-reset/confirm", response_model=dict)
+def confirm_password_reset(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    data = decode_access_token(payload.token)
+    if not data or data.get("type") != "reset":
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+    user = crud_user.get_user_by_email(db, data.get("sub"))
+    if not user:
+        raise HTTPException(status_code=400, detail="This reset link is invalid or has expired.")
+    crud_user.update_password(db, user, payload.new_password)
+    return {"message": "Password reset. You can now sign in with your new password."}
 
 
 @router.get("/users/me", response_model=UserOut)
