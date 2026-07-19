@@ -117,12 +117,24 @@ export default function ChatWidget() {
     setSessions((prev) => prev.map((s) => (s.id === active.id ? fn(s) : s)));
   }
 
+  function clearChips() {
+    setSuggestions([]);
+    setSelected(new Set());
+  }
+
   function startNew() {
     const s = freshSession();
     setSessions((prev) => [s, ...prev]);
     setActiveId(s.id);
     setShowList(false);
     setError(null);
+    clearChips();
+  }
+
+  function switchTo(id: number) {
+    setActiveId(id);
+    setShowList(false);
+    clearChips();
   }
 
   function deleteSession(id: number) {
@@ -284,10 +296,7 @@ export default function ChatWidget() {
                 >
                   <button
                     className="coach__session-title"
-                    onClick={() => {
-                      setActiveId(s.id);
-                      setShowList(false);
-                    }}
+                    onClick={() => switchTo(s.id)}
                   >
                     {s.title || "New chat"}
                   </button>

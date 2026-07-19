@@ -1158,10 +1158,17 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .coach__icon:hover,
 .coach__icon.is-active { background: var(--surface-2); color: var(--brand); }
 .coach__sessions {
-  max-height: 42%;
+  position: absolute;
+  top: 60px;
+  right: 12px;
+  width: min(260px, calc(100% - 24px));
+  max-height: 320px;
   overflow-y: auto;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface-2);
+  z-index: 6;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
   padding: 6px;
 }
 .coach__session {
