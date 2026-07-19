@@ -10,6 +10,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
+    goal_id: Optional[int] = None  # the goal the user is currently working on
 
 
 class ChatSuggestion(BaseModel):

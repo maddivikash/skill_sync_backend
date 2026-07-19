@@ -1344,6 +1344,17 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   max-width: 100%;
 }
 .coach__add-btn { align-self: flex-start; }
+.coach__suggest-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.coach__suggest-step { color: var(--text-soft); font-size: 0.72rem; }
+.coach__suggest-actions { display: flex; gap: 8px; align-items: center; }
 .coach__error {
   align-self: center;
   font-size: 0.82rem;

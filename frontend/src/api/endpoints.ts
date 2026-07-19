@@ -67,13 +67,19 @@ export interface ChatSuggestion {
   name: string;
   category: string;
 }
-export function sendChat(messages: ChatMsg[]): Promise<{
+export function sendChat(
+  messages: ChatMsg[],
+  goalId?: number | null
+): Promise<{
   reply: string;
   changed?: boolean;
   suggestions?: ChatSuggestion[];
   goal_id?: number | null;
 }> {
-  return apiFetch("/api/chat", { method: "POST", body: { messages } });
+  return apiFetch("/api/chat", {
+    method: "POST",
+    body: { messages, goal_id: goalId ?? null },
+  });
 }
 
 export function getMe(): Promise<User> {

@@ -13,6 +13,7 @@ const PLURAL: Record<string, string> = {
   tool: "Tools",
   project: "Projects",
 };
+const CAT_ORDER = ["skill", "course", "tool", "project"];
 
 const STORE_KEY = "skillsync_chat_v1";
 const GREETING: ChatMsg = {
@@ -80,8 +81,10 @@ export default function ChatWidget() {
     { name: string; category: string }[]
   >([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [goalId, setGoalId] = useState<number | null>(null);
+  const [goalId, setGoalId] = useState<number | null>(null); // persistent context for the coach
+  const [suggestGoalId, setSuggestGoalId] = useState<number | null>(null); // goal the CURRENT chips add to
   const [adding, setAdding] = useState(false);
+  const [catIndex, setCatIndex] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const keyOf = (s: { name: string; category: string }) => `${s.category}|${s.name}`;
@@ -120,6 +123,22 @@ export default function ChatWidget() {
   function clearChips() {
     setSuggestions([]);
     setSelected(new Set());
+    setCatIndex(0);
+    setSuggestGoalId(null);
+  }
+
+  // Move to the next category that has suggestions; clear chips when done.
+  function advance() {
+    const present = CAT_ORDER.filter((c) => suggestions.some((s) => s.category === c));
+    setSelected(new Set());
+    setCatIndex((i) => {
+      const next = i + 1;
+      if (next >= present.length) {
+        setSuggestions([]);
+        return 0;
+      }
+      return next;
+    });
   }
 
   function startNew() {
@@ -162,14 +181,20 @@ export default function ChatWidget() {
     setInput("");
     setBusy(true);
     try {
-      const { reply, changed, suggestions: sug, goal_id } = await sendChat(history);
+      const { reply, changed, suggestions: sug, goal_id } = await sendChat(
+        history,
+        goalId
+      );
       updateActive((s) => ({
         ...s,
         messages: [...s.messages, { role: "assistant", content: reply }],
         updated: Date.now(),
       }));
       setSuggestions(sug ?? []);
-      if (goal_id) setGoalId(goal_id); // remember the goal being built
+      setCatIndex(0);
+      // These chips add ONLY to the goal they belong to (null = don't offer Add).
+      setSuggestGoalId(sug && sug.length ? goal_id ?? null : null);
+      if (goal_id) setGoalId(goal_id); // persistent context for later requests
       // If the coach changed data (created a goal/task/etc.), refresh the app UI.
       if (changed) window.dispatchEvent(new Event("skillsync:data-changed"));
     } catch (err) {
@@ -197,11 +222,11 @@ export default function ChatWidget() {
 
   // Add the selected chips straight to the goal (no AI, no new goal).
   async function addSelected() {
-    if (!goalId || selected.size === 0 || adding) return;
+    if (!suggestGoalId || selected.size === 0 || adding) return;
     setAdding(true);
     try {
       const chosen = suggestions.filter((s) => selected.has(keyOf(s)));
-      const paths = await listPaths(goalId);
+      const paths = await listPaths(suggestGoalId);
       const byCat: Record<string, { name: string; category: string }[]> = {};
       chosen.forEach((s) => (byCat[s.category] ??= []).push(s));
       for (const cat of Object.keys(byCat)) {
@@ -210,7 +235,7 @@ export default function ChatWidget() {
           (p) => p.title.trim().toLowerCase() === title.toLowerCase()
         );
         if (!path) {
-          path = await createPath(goalId, {
+          path = await createPath(suggestGoalId, {
             title,
             description: `Suggested ${title.toLowerCase()}`,
           });
@@ -231,8 +256,7 @@ export default function ChatWidget() {
         ],
         updated: Date.now(),
       }));
-      setSuggestions([]);
-      setSelected(new Set());
+      advance(); // move to the next category (courses → tools → projects)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't add those.");
     } finally {
@@ -326,34 +350,59 @@ export default function ChatWidget() {
                 Thinking…
               </div>
             )}
-            {!busy && suggestions.length > 0 && (
-              <div className="coach__suggest">
-                <div className="coach__chips">
-                  {suggestions.map((sg, i) => {
-                    const on = selected.has(keyOf(sg));
-                    return (
+            {!busy &&
+              suggestions.length > 0 &&
+              (() => {
+                const present = CAT_ORDER.filter((c) =>
+                  suggestions.some((s) => s.category === c)
+                );
+                const cat = present[catIndex];
+                if (!cat) return null;
+                const chips = suggestions.filter((s) => s.category === cat);
+                return (
+                  <div className="coach__suggest">
+                    <div className="coach__suggest-head">
+                      <span>{PLURAL[cat]} — pick what fits</span>
+                      <span className="coach__suggest-step">
+                        {catIndex + 1}/{present.length}
+                      </span>
+                    </div>
+                    <div className="coach__chips">
+                      {chips.map((sg, i) => {
+                        const on = selected.has(keyOf(sg));
+                        return (
+                          <button
+                            key={i}
+                            className={`coach__chip ${on ? "is-selected" : ""}`}
+                            onClick={() => toggleChip(sg)}
+                          >
+                            {on ? "✓ " : "+ "}
+                            {sg.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="coach__suggest-actions">
+                      {suggestGoalId && selected.size > 0 && (
+                        <button
+                          className="btn btn--primary btn--sm"
+                          onClick={addSelected}
+                          disabled={adding}
+                        >
+                          {adding ? "Adding…" : `Add ${selected.size}`}
+                        </button>
+                      )}
                       <button
-                        key={i}
-                        className={`coach__chip ${on ? "is-selected" : ""}`}
-                        onClick={() => toggleChip(sg)}
+                        className="btn btn--ghost btn--sm"
+                        onClick={advance}
+                        disabled={adding}
                       >
-                        {on ? "✓ " : "+ "}
-                        {sg.name}
+                        {catIndex + 1 < present.length ? "Skip →" : "Done"}
                       </button>
-                    );
-                  })}
-                </div>
-                {goalId && selected.size > 0 && (
-                  <button
-                    className="btn btn--primary btn--sm coach__add-btn"
-                    onClick={addSelected}
-                    disabled={adding}
-                  >
-                    {adding ? "Adding…" : `Add ${selected.size} to your goal`}
-                  </button>
-                )}
-              </div>
-            )}
+                    </div>
+                  </div>
+                );
+              })()}
             {error && <div className="coach__error">{error}</div>}
           </div>
 

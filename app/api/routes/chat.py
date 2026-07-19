@@ -339,6 +339,11 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
         raise HTTPException(status_code=503, detail="The AI coach isn't configured yet.")
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    if payload.goal_id:
+        messages.append({"role": "system", "content":
+            f"Context: the user is currently working on goal id {payload.goal_id}. "
+            "For add/create/complete/list requests that don't name a goal, use THIS goal "
+            "by default (don't ask which goal). Only ask if no goal id is given here."})
     messages += [{"role": m.role, "content": m.content} for m in payload.messages][-12:]
 
     changed = False
