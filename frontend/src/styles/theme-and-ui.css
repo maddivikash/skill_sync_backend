@@ -1026,3 +1026,46 @@ h1, h2, h3 { font-weight: 500; }
   background: radial-gradient(1200px 600px at 50% -10%, #fbf5ea 0%, transparent 60%),
     var(--bg);
 }
+
+/* ---------- Floating "+N XP" reward chips ---------- */
+.xp-pop-stack {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 250;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+}
+.xp-pop {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  background: linear-gradient(135deg, #a8492f 0%, #c9755a 100%);
+  color: #fdf6ee;
+  padding: 11px 18px;
+  border-radius: 999px;
+  box-shadow: 0 12px 28px -8px rgba(168, 73, 47, 0.5),
+    0 2px 6px rgba(0, 0, 0, 0.16);
+  white-space: nowrap;
+  animation: xp-pop 2.2s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.xp-pop__amount {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.08rem;
+  letter-spacing: -0.01em;
+}
+.xp-pop__label {
+  font-family: var(--font);
+  font-size: 0.72rem;
+  opacity: 0.85;
+  text-transform: capitalize;
+}
+@keyframes xp-pop {
+  0% { opacity: 0; transform: translateX(46px) scale(0.9); }
+  9% { opacity: 1; transform: translateX(0) scale(1); }
+  72% { opacity: 1; transform: translateX(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.98); }
+}

@@ -108,6 +108,23 @@ export function onActivityChange(cb: () => void): () => void {
   return () => window.removeEventListener(EVENT, cb);
 }
 
+// Fire a discrete "+N XP" event so the UI can pop a floating reward chip.
+const XP_EVENT = "skillsync:xp";
+export interface XpGainDetail {
+  amount: number;
+  kind: ActivityKind;
+}
+function emitXp(amount: number, kind: ActivityKind): void {
+  window.dispatchEvent(
+    new CustomEvent<XpGainDetail>(XP_EVENT, { detail: { amount, kind } })
+  );
+}
+export function onXpGain(cb: (d: XpGainDetail) => void): () => void {
+  const handler = (e: Event) => cb((e as CustomEvent<XpGainDetail>).detail);
+  window.addEventListener(XP_EVENT, handler);
+  return () => window.removeEventListener(XP_EVENT, handler);
+}
+
 /** Record an activity for the current user; awards XP and marks today active. */
 export function logActivity(kind: ActivityKind): void {
   const uid = currentUid();
@@ -120,6 +137,7 @@ export function logActivity(kind: ActivityKind): void {
   bumpDetail(u, t, kind);
   writeStore(store);
   emit();
+  emitXp(XP[kind], kind);
 }
 
 /** Award the once-per-day login bonus (idempotent within a day). */
@@ -136,6 +154,7 @@ export function recordDailyLogin(): void {
   bumpDetail(u, t, "login");
   writeStore(store);
   emit();
+  emitXp(XP.login, "login");
 }
 
 /** Wipe the current user's XP / streak / activity history. */

@@ -2,10 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
 } from "react";
+import { onXpGain, KIND_LABEL } from "../lib/activity";
 
 /* ============================================================
    App-wide UI feedback: toasts + promise-based confirm dialog.
@@ -50,7 +52,22 @@ export function UIProvider({ children }: { children: ReactNode }) {
     options: ConfirmOptions;
     resolve: (v: boolean) => void;
   } | null>(null);
+  const [xpPops, setXpPops] = useState<
+    { id: number; amount: number; label: string }[]
+  >([]);
   const nextId = useRef(1);
+
+  // Pop a floating "+N XP" chip whenever XP is awarded (any action + login).
+  useEffect(() => {
+    return onXpGain(({ amount, kind }) => {
+      const id = nextId.current++;
+      setXpPops((prev) => [...prev, { id, amount, label: KIND_LABEL[kind] }]);
+      window.setTimeout(
+        () => setXpPops((prev) => prev.filter((x) => x.id !== id)),
+        2200
+      );
+    });
+  }, []);
 
   const remove = useCallback((id: number) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -83,6 +100,16 @@ export function UIProvider({ children }: { children: ReactNode }) {
   return (
     <UIContext.Provider value={{ toast, success, error, info, confirm }}>
       {children}
+
+      {/* Floating "+N XP" reward chips */}
+      <div className="xp-pop-stack" aria-live="polite">
+        {xpPops.map((p) => (
+          <div key={p.id} className="xp-pop">
+            <span className="xp-pop__amount">+{p.amount} XP</span>
+            <span className="xp-pop__label">{p.label}</span>
+          </div>
+        ))}
+      </div>
 
       {/* Toasts */}
       <div className="toast-stack" role="region" aria-live="polite">
