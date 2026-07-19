@@ -33,6 +33,36 @@ logger = logging.getLogger("skillsync.chat")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 MAX_TOOL_ROUNDS = 6
 
+_rr = 0  # round-robin cursor across keys
+
+
+def _ordered_keys():
+    """Keys ordered round-robin so load spreads across them each call."""
+    global _rr
+    keys = settings.GROQ_API_KEYS
+    if not keys:
+        return []
+    start = _rr % len(keys)
+    _rr += 1
+    return keys[start:] + keys[:start]
+
+
+def _groq_call(payload: dict):
+    """Call Groq, rotating keys; if all are rate-limited, wait and retry a few
+    times (the client keeps showing its loader) before giving up."""
+    resp = None
+    for attempt in range(3):
+        for key in _ordered_keys():
+            resp = httpx.post(GROQ_URL, json=payload, timeout=30,
+                              headers={"Authorization": f"Bearer {key}"})
+            if resp.is_success:
+                return resp
+        if resp is not None and resp.status_code == 429 and attempt < 2:
+            time.sleep(10)  # let the per-minute window recover, then retry
+            continue
+        break
+    return resp
+
 SYSTEM_PROMPT = (
     "You are Ascend Coach, the assistant inside Ascend — a learning-goal tracker "
     "(Goals → Learning paths → Steps → Tasks; users earn XP for completing things). "
@@ -322,18 +352,13 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                 "temperature": 0.2,
                 "max_tokens": 900,
             }
-            # Rotate keys: use the first key that succeeds (fall over on any error).
-            resp = None
-            for key in settings.GROQ_API_KEYS:
-                resp = httpx.post(GROQ_URL, timeout=45, json=payload_json,
-                                  headers={"Authorization": f"Bearer {key}"})
-                if resp.is_success:
-                    break
-            if resp.status_code == 429:
-                return {"reply": "Sorry, I couldn't respond just now — please try again "
-                                 "in a moment.",
-                        "changed": changed, "suggestions": suggestions}
-            resp.raise_for_status()
+            resp = _groq_call(payload_json)
+            if not resp.is_success:
+                if resp.status_code == 429:
+                    return {"reply": "Sorry, I couldn't respond just now — please try "
+                                     "again in a moment.",
+                            "changed": changed, "suggestions": suggestions}
+                resp.raise_for_status()
             msg = resp.json()["choices"][0]["message"]
             tool_calls = msg.get("tool_calls")
             if not tool_calls:

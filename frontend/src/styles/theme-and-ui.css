@@ -1295,7 +1295,15 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   color: #fff;
   border-bottom-right-radius: 5px;
 }
-.coach__msg--typing { opacity: 0.7; font-style: italic; }
+.coach__msg--typing {
+  opacity: 0.7;
+  font-style: italic;
+  animation: coach-pulse 1.2s ease-in-out infinite;
+}
+@keyframes coach-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
 .coach__chips {
   display: flex;
   flex-wrap: wrap;
