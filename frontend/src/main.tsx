@@ -6,7 +6,8 @@ import { AuthProvider } from "./context/AuthContext";
 import { UIProvider } from "./context/ui";
 import { ThemeProvider } from "./context/theme";
 import "@fontsource-variable/inter";
-import "@fontsource-variable/space-grotesk/wght.css";
+import "@fontsource-variable/fraunces";
+import "@fontsource-variable/fraunces/wght-italic.css";
 import "./styles/global.css";
 import "./styles/theme-and-ui.css";
 

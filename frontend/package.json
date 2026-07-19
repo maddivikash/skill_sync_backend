@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.1.0",
     "@fontsource-variable/inter": "^5.1.0",
     "@fontsource-variable/space-grotesk": "^5.1.0",
     "react": "^18.3.1",

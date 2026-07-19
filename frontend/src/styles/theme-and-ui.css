@@ -888,3 +888,141 @@ a:focus-visible,
   .page { padding: 32px 18px 64px; }
   .overview-card { padding: 24px; gap: 22px; }
 }
+
+/* ============================================================
+   V4 — WARM EDITORIAL THEME  (matches lyzr.ai)
+   Cream ground · Fraunces serif display w/ italic · terracotta
+   accent · warm-mocha dark. Loaded last so it wins the cascade.
+   This REPLACES the earlier violet direction.
+   ============================================================ */
+
+/* ---------- LIGHT (default, primary look) ---------- */
+:root {
+  --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+
+  --bg: #f4efe4;          /* warm cream */
+  --surface: #ffffff;
+  --surface-2: #faf5ec;
+  --border: #e7dece;
+  --border-strong: #d6c8b2;
+
+  --text: #29211a;        /* warm near-black */
+  --text-muted: #6f6357;
+  --text-soft: #a2978a;
+
+  --brand: #a8492f;       /* terracotta */
+  --brand-dark: #8f3c26;
+  --brand-soft: #f3e5da;
+  --brand-soft-2: #ecd9c9;
+  --grad-brand: linear-gradient(135deg, #a8492f 0%, #c9755a 100%);
+  --glow-brand: rgba(168, 73, 47, 0.22);
+
+  --shadow-sm: 0 1px 2px rgba(60, 42, 28, 0.06);
+  --shadow: 0 8px 26px rgba(60, 42, 28, 0.08), 0 1px 3px rgba(60, 42, 28, 0.05);
+  --shadow-lg: 0 26px 64px rgba(60, 42, 28, 0.16);
+}
+
+/* ---------- DARK (warm mocha, like lyzr's dark sections) ---------- */
+:root[data-theme="dark"] {
+  --bg: #1b1510;
+  --surface: #241c15;
+  --surface-2: #2d241b;
+  --border: #392e23;
+  --border-strong: #4b3d2e;
+
+  --text: #f1e9dd;
+  --text-muted: #bcae9d;
+  --text-soft: #8c7f6f;
+
+  --brand: #d5805f;
+  --brand-dark: #c56f4e;
+  --brand-soft: #2f2016;
+  --brand-soft-2: #3c2a1e;
+  --grad-brand: linear-gradient(135deg, #c56f4e 0%, #dc9068 100%);
+  --glow-brand: rgba(213, 128, 95, 0.28);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 28px 64px rgba(0, 0, 0, 0.5);
+}
+
+/* ---------- Backgrounds: quiet warm ground ---------- */
+body {
+  background:
+    radial-gradient(1100px 620px at 84% -10%, #fbf5ea 0%, transparent 54%),
+    var(--bg);
+}
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(1100px 640px at 82% -12%, #2f2016 0%, transparent 55%),
+    radial-gradient(760px 520px at -6% 6%, #241811 0%, transparent 55%),
+    var(--bg);
+}
+
+/* ---------- Serif display, set with editorial restraint ---------- */
+h1, h2, h3 { font-weight: 500; }
+.page__title {
+  /* undo the old violet gradient-clip; solid serif now */
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+  color: var(--text);
+  font-weight: 480;
+  letter-spacing: -0.02em;
+}
+/* Eyebrow stays SANS (tracked, terracotta) for editorial contrast */
+.eyebrow {
+  font-family: var(--font);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--brand);
+}
+.brand__name { font-weight: 600; letter-spacing: -0.01em; }
+
+/* ---------- Header, glass over warm ground ---------- */
+:root[data-theme="dark"] .app-header { background: rgba(27, 21, 16, 0.78); }
+
+/* ---------- Progress ring track (warm) ---------- */
+.progress-ring__track { stroke: rgba(168, 73, 47, 0.15); }
+:root[data-theme="dark"] .progress-ring__track { stroke: rgba(213, 128, 95, 0.18); }
+
+/* ---------- Hero console gradient hairline (warm) ---------- */
+.overview-card::after {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 73, 47, 0.38) 0%,
+    transparent 38%,
+    transparent 62%,
+    rgba(201, 117, 90, 0.3) 100%
+  );
+}
+:root[data-theme="dark"] .overview-card {
+  box-shadow: var(--shadow), 0 40px 80px -55px var(--glow-brand);
+}
+
+/* ---------- Goal card hover (warm glow) ---------- */
+:root[data-theme="dark"] .goal-card:hover {
+  border-color: rgba(213, 128, 95, 0.4);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(213, 128, 95, 0.22),
+    0 0 34px -12px var(--glow-brand);
+}
+
+/* ---------- XP card — warm terracotta reward ---------- */
+.activity__xp-card,
+.activity__xp-card--link {
+  background: linear-gradient(135deg, #a8492f 0%, #c9755a 55%, #d68a63 100%);
+  color: #fdf6ee;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.activity__xp-next,
+.activity__xp-hint { color: rgba(253, 246, 238, 0.82); }
+
+/* ---------- Auth pages: warm radial ---------- */
+:root[data-theme="dark"] .auth-page {
+  background: radial-gradient(1200px 600px at 50% -10%, #2f2016 0%, transparent 60%),
+    var(--bg);
+}
+.auth-page {
+  background: radial-gradient(1200px 600px at 50% -10%, #fbf5ea 0%, transparent 60%),
+    var(--bg);
+}
