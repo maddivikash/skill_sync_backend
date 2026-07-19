@@ -45,6 +45,12 @@ class Settings:
 
     # AI coach (Groq — free hosted LLM API). If unset, the chat endpoint is off.
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
+    # One or more keys (comma-separated) — rotated on rate limits for failover.
+    GROQ_API_KEYS: list = [
+        k.strip()
+        for k in os.getenv("GROQ_API_KEYS", os.getenv("GROQ_API_KEY", "")).split(",")
+        if k.strip()
+    ]
     GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 

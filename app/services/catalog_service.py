@@ -14,7 +14,7 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 def _llm_suggestions(role_text: str) -> dict | None:
     """Generate suggestions for a role NOT in the catalog, via Groq. Returns a
     grouped dict of CatalogItemOut-shaped dicts, or None if unavailable."""
-    if not settings.GROQ_API_KEY or not role_text.strip():
+    if not settings.GROQ_API_KEYS or not role_text.strip():
         return None
     prompt = (
         f"Suggest a learning plan for someone whose goal/role is: \"{role_text}\". "
@@ -26,19 +26,20 @@ def _llm_suggestions(role_text: str) -> dict | None:
         "Use real, well-known resources. Works for ANY field (tech or non-tech, "
         "e.g. UPSC, medicine, music). Keep names concise."
     )
+    body = {
+        "model": settings.GROQ_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.4,
+        "max_tokens": 1600,
+    }
     try:
-        resp = httpx.post(
-            GROQ_URL,
-            headers={"Authorization": f"Bearer {settings.GROQ_API_KEY}"},
-            json={
-                "model": settings.GROQ_MODEL,
-                "messages": [{"role": "user", "content": prompt}],
-                "response_format": {"type": "json_object"},
-                "temperature": 0.4,
-                "max_tokens": 1600,
-            },
-            timeout=45,
-        )
+        resp = None
+        for key in settings.GROQ_API_KEYS:  # rotate keys; use first that succeeds
+            resp = httpx.post(GROQ_URL, json=body, timeout=45,
+                              headers={"Authorization": f"Bearer {key}"})
+            if resp.is_success:
+                break
         resp.raise_for_status()
         data = json.loads(resp.json()["choices"][0]["message"]["content"])
     except Exception:

@@ -16,8 +16,9 @@ services:
       CORS_ORIGINS: "https://ascenddaily.in,https://skillsync-io.duckdns.org"
       # Password-reset links point at the live frontend.
       FRONTEND_URL: "https://ascenddaily.in"
-      # AI coach (Groq). Set GROQ_API_KEY in the host .env to enable it.
+      # AI coach (Groq). GROQ_API_KEYS = comma-separated keys (rotated on limits).
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_API_KEYS: ${GROQ_API_KEYS:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
       # Email (Gmail SMTP). Only the password is secret (from host .env).
       SMTP_HOST: "smtp.gmail.com"

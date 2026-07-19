@@ -301,34 +301,34 @@ def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
 @router.post("/chat", response_model=ChatReply)
 def chat(payload: ChatRequest, db: Session = Depends(get_db),
          current_user: User = Depends(get_current_user)):
-    if not settings.GROQ_API_KEY:
+    if not settings.GROQ_API_KEYS:
         raise HTTPException(status_code=503, detail="The AI coach isn't configured yet.")
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages += [{"role": m.role, "content": m.content} for m in payload.messages][-12:]
 
-    headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}"}
     changed = False
     suggestions: list = []
     try:
         for _ in range(MAX_TOOL_ROUNDS):
+            payload_json = {
+                "model": settings.GROQ_MODEL,
+                "messages": messages,
+                "tools": TOOLS,
+                "tool_choice": "auto",
+                "temperature": 0.2,
+                "max_tokens": 900,
+            }
+            # Rotate keys: use the first key that succeeds (fall over on any error).
             resp = None
-            for attempt in range(3):  # retry Groq rate limits
-                resp = httpx.post(GROQ_URL, headers=headers, timeout=45, json={
-                    "model": settings.GROQ_MODEL,
-                    "messages": messages,
-                    "tools": TOOLS,
-                    "tool_choice": "auto",
-                    "temperature": 0.2,
-                    "max_tokens": 900,
-                })
-                if resp.status_code == 429 and attempt < 2:
-                    time.sleep(3)
-                    continue
-                break
+            for key in settings.GROQ_API_KEYS:
+                resp = httpx.post(GROQ_URL, timeout=45, json=payload_json,
+                                  headers={"Authorization": f"Bearer {key}"})
+                if resp.is_success:
+                    break
             if resp.status_code == 429:
-                return {"reply": "I'm handling a lot of requests right now — please wait "
-                                 "a few seconds and try again.",
+                return {"reply": "Sorry, I couldn't respond just now — please try again "
+                                 "in a moment.",
                         "changed": changed, "suggestions": suggestions}
             resp.raise_for_status()
             msg = resp.json()["choices"][0]["message"]
