@@ -5,7 +5,7 @@ const STORE_KEY = "skillsync_chat_v1";
 const GREETING: ChatMsg = {
   role: "assistant",
   content:
-    "Hi! I'm your SkillSync Coach. Ask me about skills to learn, courses to take, or how to plan a goal.",
+    "Hi! I'm your Ascend Coach. Ask me about skills to learn, courses to take, or how to plan a goal.",
 };
 
 interface Session {
@@ -134,18 +134,18 @@ export default function ChatWidget() {
         <button
           className="coach-fab"
           onClick={() => setOpen(true)}
-          aria-label="Open SkillSync Coach"
-          title="SkillSync Coach"
+          aria-label="Open Ascend Coach"
+          title="Ascend Coach"
         >
           ✦
         </button>
       )}
 
       {open && (
-        <div className="coach" role="dialog" aria-label="SkillSync Coach">
+        <div className="coach" role="dialog" aria-label="Ascend Coach">
           <div className="coach__head">
             <div className="coach__head-main">
-              <span className="coach__title">SkillSync Coach</span>
+              <span className="coach__title">Ascend Coach</span>
               <span className="coach__sub">Learning &amp; courses only</span>
             </div>
             <div className="coach__head-actions">

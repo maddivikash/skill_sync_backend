@@ -12,10 +12,10 @@ services:
     environment:
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
       APP_ENV: prod
-      # Allow the HTTPS frontend origin (and the raw IP during transition).
-      CORS_ORIGINS: "https://skillsync-io.duckdns.org,http://3.109.158.246"
+      # Allow the HTTPS frontend origin.
+      CORS_ORIGINS: "https://ascenddaily.in"
       # Password-reset links point at the live frontend.
-      FRONTEND_URL: "https://skillsync-io.duckdns.org"
+      FRONTEND_URL: "https://ascenddaily.in"
       # AI coach (Groq). Set GROQ_API_KEY in the host .env to enable it.
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
@@ -24,14 +24,14 @@ services:
       SMTP_PORT: "587"
       SMTP_USER: "skillsync.mailer@gmail.com"
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      EMAIL_FROM: "SkillSync <skillsync.mailer@gmail.com>"
+      EMAIL_FROM: "Ascend <skillsync.mailer@gmail.com>"
     restart: unless-stopped
 
   web:
     build:
       args:
         # Same-origin API under /api (Caddy strips the prefix). No CORS/port.
-        VITE_API_URL: "https://skillsync-io.duckdns.org/api"
+        VITE_API_URL: "https://ascenddaily.in/api"
     restart: unless-stopped
 
   caddy:

@@ -41,7 +41,7 @@ class Settings:
     SMTP_PORT: int = int(os.getenv("SMTP_PORT", 587))
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
-    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "SkillSync <no-reply@skillsync.local>")
+    EMAIL_FROM: str = os.getenv("EMAIL_FROM", "Ascend <no-reply@ascenddaily.in>")
 
     # AI coach (Groq — free hosted LLM API). If unset, the chat endpoint is off.
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")

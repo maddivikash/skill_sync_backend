@@ -26,7 +26,7 @@ export default function Layout() {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header__inner">
-          <Link to="/" className="brand" aria-label="SkillSync home">
+          <Link to="/" className="brand" aria-label="Ascend home">
             <span className="brand__mark" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
                 <path
@@ -39,7 +39,7 @@ export default function Layout() {
               </svg>
             </span>
             <span className="brand__name">
-              Skill<span className="brand__accent">Sync</span>
+              As<span className="brand__accent">cend</span>
             </span>
           </Link>
           <div className="app-header__right">

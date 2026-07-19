@@ -47,7 +47,7 @@ export default function Login() {
             </svg>
           </span>
           <span className="brand__name">
-            Skill<span className="brand__accent">Sync</span>
+            As<span className="brand__accent">cend</span>
           </span>
         </div>
         <h1 className="auth-title">Welcome back</h1>

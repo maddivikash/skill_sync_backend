@@ -15,9 +15,9 @@ logger = logging.getLogger("skillsync.email")
 
 
 def send_reset_email(to_email: str, reset_link: str) -> None:
-    subject = "Reset your SkillSync password"
+    subject = "Reset your Ascend password"
     body = (
-        "We received a request to reset your SkillSync password.\n\n"
+        "We received a request to reset your Ascend password.\n\n"
         f"Reset it here (valid for {settings.RESET_TOKEN_EXPIRE_MINUTES} minutes):\n"
         f"{reset_link}\n\n"
         "If you didn't request this, you can safely ignore this email."

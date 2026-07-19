@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="SkillSync API", lifespan=lifespan)
+app = FastAPI(title="Ascend API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
