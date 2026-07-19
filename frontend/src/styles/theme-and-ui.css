@@ -1324,6 +1324,19 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   transition: background 0.15s, border-color 0.15s;
 }
 .coach__chip:hover { background: var(--brand-soft); border-color: var(--brand); }
+.coach__chip.is-selected {
+  background: var(--grad-brand);
+  color: #fff;
+  border-color: transparent;
+}
+.coach__suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-self: flex-start;
+  max-width: 100%;
+}
+.coach__add-btn { align-self: flex-start; }
 .coach__error {
   align-self: center;
   font-size: 0.82rem;

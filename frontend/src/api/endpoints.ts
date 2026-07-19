@@ -67,9 +67,12 @@ export interface ChatSuggestion {
   name: string;
   category: string;
 }
-export function sendChat(
-  messages: ChatMsg[]
-): Promise<{ reply: string; changed?: boolean; suggestions?: ChatSuggestion[] }> {
+export function sendChat(messages: ChatMsg[]): Promise<{
+  reply: string;
+  changed?: boolean;
+  suggestions?: ChatSuggestion[];
+  goal_id?: number | null;
+}> {
   return apiFetch("/api/chat", { method: "POST", body: { messages } });
 }
 

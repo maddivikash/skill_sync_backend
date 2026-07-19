@@ -1,5 +1,18 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { sendChat, type ChatMsg } from "../api/endpoints";
+import {
+  createPath,
+  createStep,
+  listPaths,
+  sendChat,
+  type ChatMsg,
+} from "../api/endpoints";
+
+const PLURAL: Record<string, string> = {
+  skill: "Skills",
+  course: "Courses",
+  tool: "Tools",
+  project: "Projects",
+};
 
 const STORE_KEY = "skillsync_chat_v1";
 const GREETING: ChatMsg = {
@@ -66,7 +79,12 @@ export default function ChatWidget() {
   const [suggestions, setSuggestions] = useState<
     { name: string; category: string }[]
   >([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [goalId, setGoalId] = useState<number | null>(null);
+  const [adding, setAdding] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+
+  const keyOf = (s: { name: string; category: string }) => `${s.category}|${s.name}`;
 
   const active = sessions.find((s) => s.id === activeId) ?? sessions[0];
 
@@ -119,6 +137,7 @@ export default function ChatWidget() {
     if (!text || busy) return;
     setError(null);
     setSuggestions([]);
+    setSelected(new Set());
     const userMsg: ChatMsg = { role: "user", content: text };
     const hadUser = active.messages.some((m) => m.role === "user");
     updateActive((s) => ({
@@ -131,13 +150,14 @@ export default function ChatWidget() {
     setInput("");
     setBusy(true);
     try {
-      const { reply, changed, suggestions: sug } = await sendChat(history);
+      const { reply, changed, suggestions: sug, goal_id } = await sendChat(history);
       updateActive((s) => ({
         ...s,
         messages: [...s.messages, { role: "assistant", content: reply }],
         updated: Date.now(),
       }));
       setSuggestions(sug ?? []);
+      if (goal_id) setGoalId(goal_id); // remember the goal being built
       // If the coach changed data (created a goal/task/etc.), refresh the app UI.
       if (changed) window.dispatchEvent(new Event("skillsync:data-changed"));
     } catch (err) {
@@ -152,6 +172,60 @@ export default function ChatWidget() {
   function handleSend(e: FormEvent) {
     e.preventDefault();
     sendMessage(input);
+  }
+
+  function toggleChip(s: { name: string; category: string }) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const k = keyOf(s);
+      next.has(k) ? next.delete(k) : next.add(k);
+      return next;
+    });
+  }
+
+  // Add the selected chips straight to the goal (no AI, no new goal).
+  async function addSelected() {
+    if (!goalId || selected.size === 0 || adding) return;
+    setAdding(true);
+    try {
+      const chosen = suggestions.filter((s) => selected.has(keyOf(s)));
+      const paths = await listPaths(goalId);
+      const byCat: Record<string, { name: string; category: string }[]> = {};
+      chosen.forEach((s) => (byCat[s.category] ??= []).push(s));
+      for (const cat of Object.keys(byCat)) {
+        const title = PLURAL[cat] || "Skills";
+        let path = paths.find(
+          (p) => p.title.trim().toLowerCase() === title.toLowerCase()
+        );
+        if (!path) {
+          path = await createPath(goalId, {
+            title,
+            description: `Suggested ${title.toLowerCase()}`,
+          });
+        }
+        for (const item of byCat[cat]) {
+          await createStep(path.id, { title: item.name });
+        }
+      }
+      window.dispatchEvent(new Event("skillsync:data-changed"));
+      updateActive((s) => ({
+        ...s,
+        messages: [
+          ...s.messages,
+          {
+            role: "assistant",
+            content: `Added ${chosen.length} item${chosen.length > 1 ? "s" : ""} to your goal. ✓`,
+          },
+        ],
+        updated: Date.now(),
+      }));
+      setSuggestions([]);
+      setSelected(new Set());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't add those.");
+    } finally {
+      setAdding(false);
+    }
   }
 
   return (
@@ -244,17 +318,31 @@ export default function ChatWidget() {
               </div>
             )}
             {!busy && suggestions.length > 0 && (
-              <div className="coach__chips">
-                {suggestions.map((sg, i) => (
+              <div className="coach__suggest">
+                <div className="coach__chips">
+                  {suggestions.map((sg, i) => {
+                    const on = selected.has(keyOf(sg));
+                    return (
+                      <button
+                        key={i}
+                        className={`coach__chip ${on ? "is-selected" : ""}`}
+                        onClick={() => toggleChip(sg)}
+                      >
+                        {on ? "✓ " : "+ "}
+                        {sg.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {goalId && selected.size > 0 && (
                   <button
-                    key={i}
-                    className="coach__chip"
-                    onClick={() => sendMessage(`Add "${sg.name}"`)}
-                    title={`Add ${sg.name}`}
+                    className="btn btn--primary btn--sm coach__add-btn"
+                    onClick={addSelected}
+                    disabled={adding}
                   >
-                    + {sg.name}
+                    {adding ? "Adding…" : `Add ${selected.size} to your goal`}
                   </button>
-                ))}
+                )}
               </div>
             )}
             {error && <div className="coach__error">{error}</div>}

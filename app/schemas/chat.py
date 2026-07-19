@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, constr
 
@@ -21,3 +21,4 @@ class ChatReply(BaseModel):
     reply: str
     changed: bool = False  # true if the agent modified the user's data (UI should refresh)
     suggestions: List[ChatSuggestion] = []  # selectable chips to render in chat
+    goal_id: Optional[int] = None  # goal being built, so the UI can add chips to it

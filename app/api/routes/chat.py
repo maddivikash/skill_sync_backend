@@ -75,8 +75,9 @@ SYSTEM_PROMPT = (
     "clearly stated it (e.g. they just said 'create a new goal'), ASK 'What role or "
     "subject do you want to focus on?' and WAIT for their answer — NEVER invent or "
     "assume a role. Once you have it, call create_goal (default 5 hrs/week, 12 weeks), "
-    "then suggest_for_role and offer a FEW options at a time (not a huge list); when the "
-    "user picks, add them with create_path/add_step. Keep it conversational.\n"
+    "then suggest_for_role. The suggestions appear as selectable chips the USER picks and "
+    "adds via the UI — so after suggesting, do NOT add them yourself with tools. Just "
+    "create the goal, suggest, and let them choose. Keep it conversational.\n"
     "- Only call create_goal when the user EXPLICITLY asks to create/start a goal. "
     "'Get suggestions for X' or 'what should I learn for X' means call suggest_for_role "
     "and show them — do NOT create a goal. Never create the same goal twice.\n"
@@ -342,6 +343,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
 
     changed = False
     suggestions: list = []
+    active_goal_id = None  # goal the user is building, so the UI can add to it
     try:
         for _ in range(MAX_TOOL_ROUNDS):
             payload_json = {
@@ -357,13 +359,13 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                 if resp.status_code == 429:
                     return {"reply": "Sorry, I couldn't respond just now — please try "
                                      "again in a moment.",
-                            "changed": changed, "suggestions": suggestions}
+                            "changed": changed, "suggestions": suggestions, "goal_id": active_goal_id}
                 resp.raise_for_status()
             msg = resp.json()["choices"][0]["message"]
             tool_calls = msg.get("tool_calls")
             if not tool_calls:
                 return {"reply": (msg.get("content") or "").strip(),
-                        "changed": changed, "suggestions": suggestions}
+                        "changed": changed, "suggestions": suggestions, "goal_id": active_goal_id}
 
             messages.append({"role": "assistant", "content": msg.get("content") or "",
                              "tool_calls": tool_calls})
@@ -381,10 +383,13 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                     suggestions = [{"name": nm, "category": cat}
                                    for cat in ("skill", "course", "tool", "project")
                                    for nm in (result.get(cat) or [])]
+                # Remember the goal being built so the UI can add chips to it.
+                if fname == "create_goal" and isinstance(result, dict) and result.get("created_goal"):
+                    active_goal_id = result["created_goal"]["id"]
                 messages.append({"role": "tool", "tool_call_id": tc["id"],
                                  "content": json.dumps(result)})
         return {"reply": "I couldn't finish that — try rephrasing or breaking it into steps.",
-                "changed": changed, "suggestions": suggestions}
+                "changed": changed, "suggestions": suggestions, "goal_id": active_goal_id}
     except HTTPException:
         raise
     except Exception:
