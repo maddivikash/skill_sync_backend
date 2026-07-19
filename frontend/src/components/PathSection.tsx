@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   createStep,
   deletePath,
@@ -46,6 +46,17 @@ export default function PathSection({ path, expanded, onToggle, onDeleted }: Pro
   useEffect(() => {
     loadSteps();
   }, [loadSteps]);
+
+  // Award a one-time "path completed" bonus when the last step gets checked.
+  const prevComplete = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (loading) return;
+    const allDone = steps.length > 0 && steps.every((s) => s.is_done);
+    if (prevComplete.current === false && allDone) {
+      logActivity("complete_path");
+    }
+    prevComplete.current = allDone;
+  }, [steps, loading]);
 
   async function refresh() {
     await loadSteps();

@@ -14,17 +14,21 @@ export type ActivityKind =
   | "step"
   | "task"
   | "complete_task"
-  | "complete_step";
+  | "complete_step"
+  | "complete_path";
 
+// XP is earned by FINISHING things, not creating them. Creation actions
+// (goal/path/project/step/task) are logged for the heatmap but award 0 XP.
 const XP: Record<ActivityKind, number> = {
   login: 15,
-  goal: 25,
-  path: 15,
-  project: 20,
-  step: 10,
-  task: 8,
-  complete_task: 5,
-  complete_step: 10,
+  goal: 0,
+  path: 0,
+  project: 0,
+  step: 0,
+  task: 0,
+  complete_task: 10,
+  complete_step: 20, // a step / course completed
+  complete_path: 50, // an entire learning path completed — bonus
 };
 
 interface UserActivity {
@@ -44,6 +48,7 @@ export const KIND_LABEL: Record<ActivityKind, string> = {
   task: "task added",
   complete_task: "task completed",
   complete_step: "step completed",
+  complete_path: "path completed",
 };
 
 type Store = Record<string, UserActivity>;
@@ -137,7 +142,7 @@ export function logActivity(kind: ActivityKind): void {
   bumpDetail(u, t, kind);
   writeStore(store);
   emit();
-  emitXp(XP[kind], kind);
+  if (XP[kind] > 0) emitXp(XP[kind], kind); // no chip for 0-XP creation actions
 }
 
 /** Award the once-per-day login bonus (idempotent within a day). */

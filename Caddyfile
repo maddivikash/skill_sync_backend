@@ -1,0 +1,15 @@
+# Caddy reverse proxy — automatic HTTPS via Let's Encrypt.
+# Frontend on 443, API on 8443, both under the one DuckDNS name.
+{
+	email vickyvikashmaddi@gmail.com
+}
+
+# Frontend (React/nginx) on standard HTTPS.
+skillsync-io.duckdns.org {
+	reverse_proxy web:80
+}
+
+# API on port 8443 (same managed certificate for the hostname).
+skillsync-io.duckdns.org:8443 {
+	reverse_proxy api:8000
+}

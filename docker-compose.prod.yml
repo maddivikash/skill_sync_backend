@@ -1,29 +1,43 @@
-# Production override for the single EC2 host.
+# Production override for the single EC2 host — HTTPS via Caddy.
 # Run with:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
-# NOTE: the EC2 public IP is baked into the frontend at build time. If the
-# instance is stopped/started the IP changes — update PUBLIC_HOST below and
-# rebuild web. (Allocate an Elastic IP later for a stable address.)
+# Caddy fronts everything (80/443/8443) and auto-manages Let's Encrypt certs
+# for skillsync-io.duckdns.org. web + api are reached over the internal network.
 services:
   db:
     restart: unless-stopped
 
   api:
     environment:
-      # SECRET_KEY comes from the .env file on the host (never commit a real one).
       SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
       APP_ENV: prod
-      # Browser origin of the frontend (served on port 80, so no port suffix).
-      CORS_ORIGINS: "http://3.109.158.246"
+      # Allow the HTTPS frontend origin (and the raw IP during transition).
+      CORS_ORIGINS: "https://skillsync-io.duckdns.org,http://3.109.158.246"
     restart: unless-stopped
 
   web:
     build:
       args:
-        # Frontend calls the API at the host's public IP, port 8000.
-        VITE_API_URL: "http://3.109.158.246:8000"
-    # Serve the frontend on port 80 (open in the security group).
+        # Frontend calls the API over HTTPS on port 8443.
+        VITE_API_URL: "https://skillsync-io.duckdns.org:8443"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - web
+      - api
     ports:
       - "80:80"
+      - "443:443"
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
