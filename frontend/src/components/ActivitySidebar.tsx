@@ -10,8 +10,7 @@ import {
 } from "../lib/activity";
 
 const WEEKS = 5; // ~1 month of history
-const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DOW = ["S", "M", "T", "W", "T", "F", "S"];
 
 interface Cell {
   key: string;
@@ -74,13 +73,6 @@ export default function ActivitySidebar() {
 
   const grid = buildGrid(summary.days);
   const lvl = summary.level;
-
-  // Month label per column: show the abbrev where a new month starts.
-  const monthLabels = grid.map((col, i) => {
-    const m = col[0].date.getMonth();
-    const prev = i > 0 ? grid[i - 1][0].date.getMonth() : -1;
-    return m !== prev ? MONTHS[m] : "";
-  });
 
   function tipData(cell: Cell): { date: string; lines: string[] } {
     const d = cell.date.toLocaleDateString(undefined, {
@@ -157,36 +149,27 @@ export default function ActivitySidebar() {
           <span>Activity</span>
           <span className="activity__heat-sub">this month</span>
         </div>
-        <div className="activity__heat-body">
-          <div className="activity__weekdays" aria-hidden="true">
-            {DAY_LABELS.map((d, i) => (
-              <span key={i}>{d}</span>
+        <div className="cal">
+          <div className="cal__head" aria-hidden="true">
+            {DOW.map((d, i) => (
+              <span key={i} className="cal__dow">
+                {d}
+              </span>
             ))}
           </div>
-          <div className="activity__grid-area">
-            <div className="activity__months" aria-hidden="true">
-              {monthLabels.map((m, i) => (
-                <span key={i} className="activity__month">
-                  {m}
-                </span>
-              ))}
-            </div>
-            <div className="activity__grid" role="img" aria-label="Activity heatmap">
-              {grid.map((col, ci) => (
-                <div key={ci} className="activity__col">
-                  {col.map((cell) => (
-                    <span
-                      key={cell.key}
-                      className={`activity__cell ${
-                        cell.future ? "is-future" : `lvl-${level(cell.count)}`
-                      }`}
-                      onMouseEnter={(e) => showTip(e, cell)}
-                      onMouseLeave={() => setTip(null)}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
+          <div className="cal__grid" role="img" aria-label="Activity this month">
+            {grid.map((week) =>
+              week.map((cell) => (
+                <span
+                  key={cell.key}
+                  className={`activity__cell ${
+                    cell.future ? "is-future" : `lvl-${level(cell.count)}`
+                  }`}
+                  onMouseEnter={(e) => showTip(e, cell)}
+                  onMouseLeave={() => setTip(null)}
+                />
+              ))
+            )}
           </div>
         </div>
         <div className="activity__legend">

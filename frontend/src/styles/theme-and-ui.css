@@ -1231,15 +1231,21 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .activity__xp-card--link,
 .activity__xp-card--link:hover { text-decoration: none; }
 
-/* ---------- Activity heatmap: bigger cells so a month fills the card ---------- */
-.activity__heat-body { justify-content: center; }
-.activity__grid .activity__cell { width: 24px; height: 24px; border-radius: 6px; }
-.activity__grid,
-.activity__col { gap: 5px; }
-.activity__weekdays { gap: 5px; padding-top: 20px; }
-.activity__weekdays span { height: 24px; line-height: 24px; }
-.activity__months { gap: 5px; }
-.activity__month { width: 24px; }
+/* ---------- Activity: month calendar that fills the card width ---------- */
+.cal { display: flex; flex-direction: column; gap: 6px; }
+.cal__head,
+.cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.cal__dow { text-align: center; font-size: 0.66rem; color: var(--text-soft); }
+.cal__grid .activity__cell {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 7px;
+}
 .coach__title {
   display: block;
   font-family: var(--font-display);
