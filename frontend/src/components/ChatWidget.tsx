@@ -15,6 +15,21 @@ interface Session {
   updated: number;
 }
 
+// Minimal, safe markdown -> HTML (escape first, then bold/code/line breaks +
+// simple bullet lines) so replies don't show raw ** or #.
+function fmt(text: string): string {
+  const esc = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return esc
+    .replace(/^\s*#{1,6}\s*/gm, "") // drop heading hashes
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/^\s*[-*]\s+/gm, "• ") // bullets -> •
+    .replace(/\n/g, "<br/>");
+}
+
 function uid(): string {
   return localStorage.getItem("skillsync_uid") || "anon";
 }
@@ -206,9 +221,11 @@ export default function ChatWidget() {
 
           <div className="coach__body" ref={bodyRef}>
             {active.messages.map((m, i) => (
-              <div key={i} className={`coach__msg coach__msg--${m.role}`}>
-                {m.content}
-              </div>
+              <div
+                key={i}
+                className={`coach__msg coach__msg--${m.role}`}
+                dangerouslySetInnerHTML={{ __html: fmt(m.content) }}
+              />
             ))}
             {busy && (
               <div className="coach__msg coach__msg--assistant coach__msg--typing">
