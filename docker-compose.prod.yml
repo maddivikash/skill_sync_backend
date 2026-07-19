@@ -19,6 +19,12 @@ services:
       # AI coach (Groq). Set GROQ_API_KEY in the host .env to enable it.
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      # Email (Gmail SMTP). Only the password is secret (from host .env).
+      SMTP_HOST: "smtp.gmail.com"
+      SMTP_PORT: "587"
+      SMTP_USER: "skillsync.mailer@gmail.com"
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: "SkillSync <skillsync.mailer@gmail.com>"
     restart: unless-stopped
 
   web:

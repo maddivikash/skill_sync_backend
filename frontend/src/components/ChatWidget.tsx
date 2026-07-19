@@ -19,6 +19,12 @@ export default function ChatWidget() {
     bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy, open]);
 
+  // Push the app content left while the drawer is open.
+  useEffect(() => {
+    document.body.classList.toggle("coach-open", open);
+    return () => document.body.classList.remove("coach-open");
+  }, [open]);
+
   async function handleSend(e: FormEvent) {
     e.preventDefault();
     const text = input.trim();
@@ -44,20 +50,31 @@ export default function ChatWidget() {
 
   return (
     <>
-      <button
-        className="coach-fab"
-        onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Close coach" : "Open SkillSync Coach"}
-        title="SkillSync Coach"
-      >
-        {open ? "✕" : "✦"}
-      </button>
+      {!open && (
+        <button
+          className="coach-fab"
+          onClick={() => setOpen(true)}
+          aria-label="Open SkillSync Coach"
+          title="SkillSync Coach"
+        >
+          ✦
+        </button>
+      )}
 
       {open && (
         <div className="coach" role="dialog" aria-label="SkillSync Coach">
           <div className="coach__head">
-            <span className="coach__title">SkillSync Coach</span>
-            <span className="coach__sub">Learning &amp; courses only</span>
+            <div>
+              <span className="coach__title">SkillSync Coach</span>
+              <span className="coach__sub">Learning &amp; courses only</span>
+            </div>
+            <button
+              className="coach__close"
+              onClick={() => setOpen(false)}
+              aria-label="Close coach"
+            >
+              ✕
+            </button>
           </div>
 
           <div className="coach__body" ref={bodyRef}>

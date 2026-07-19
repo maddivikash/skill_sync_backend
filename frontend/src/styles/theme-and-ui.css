@@ -1094,30 +1094,53 @@ h1, h2, h3 { font-weight: 500; }
 }
 .coach-fab:hover { transform: translateY(-2px) scale(1.04); }
 
+/* Right-docked, full-height drawer that pushes the page content left. */
+:root { --coach-w: 400px; }
 .coach {
   position: fixed;
-  right: 22px;
-  bottom: 90px;
+  top: 0;
+  right: 0;
+  bottom: 0;
   z-index: 260;
-  width: min(380px, calc(100vw - 32px));
-  height: min(560px, calc(100vh - 140px));
+  width: min(var(--coach-w), 100vw);
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  animation: coach-in 0.18s ease;
+  border-left: 1px solid var(--border);
+  box-shadow: -16px 0 44px -20px rgba(0, 0, 0, 0.28);
+  animation: coach-slide 0.22s ease;
 }
-@keyframes coach-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+@keyframes coach-slide {
+  from { transform: translateX(100%); }
+}
+/* Shift the whole app left so the drawer never covers content. */
+.app-shell { transition: padding-right 0.22s ease; }
+body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
+@media (max-width: 760px) {
+  /* On small screens the drawer overlays instead of pushing. */
+  body.coach-open .app-shell { padding-right: 0; }
 }
 .coach__head {
-  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
   background: linear-gradient(135deg, var(--surface-2), var(--surface));
 }
+.coach__close {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 1.05rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.coach__close:hover { background: var(--surface-2); color: var(--text); }
 .coach__title {
   display: block;
   font-family: var(--font-display);
