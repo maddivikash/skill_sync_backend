@@ -59,3 +59,20 @@ def authenticate_user(db: Session, email: str, password: str):
 
 def login_user(db: Session, email: str, password: str):
     return authenticate_user(db, email, password)
+
+
+def update_password(db: Session, user, new_password: str):
+    user.hashed_password = pwd_context.hash(new_password)
+    db.commit()
+
+
+def reset_user_data(db: Session, user_id: int) -> int:
+    """Hard-delete all of a user's goals (cascades to paths/steps/tasks)."""
+    from app.models.goal import Goal
+
+    goals = db.query(Goal).filter(Goal.owner_id == user_id).all()
+    count = len(goals)
+    for g in goals:
+        db.delete(g)  # ORM cascade removes paths -> steps -> tasks
+    db.commit()
+    return count

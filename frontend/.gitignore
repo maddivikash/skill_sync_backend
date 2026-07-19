@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env
+.DS_Store
+
+# TypeScript build info / emitted config decls
+*.tsbuildinfo
+vite.config.d.ts

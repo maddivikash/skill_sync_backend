@@ -1,0 +1,47 @@
+# Local dev stack: app + Postgres, matching the cloud shape (RDS in Phase 2).
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: skillsync
+      POSTGRES_PASSWORD: skillsync
+      POSTGRES_DB: skillsync
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillsync"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://skillsync:skillsync@db:5432/skillsync
+      SECRET_KEY: dev-only-change-me
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      REFRESH_TOKEN_EXPIRE_DAYS: "7"
+      APP_ENV: dev
+      AUTO_CREATE_TABLES: "false"  # schema managed by Alembic (entrypoint runs upgrade head)
+      CORS_ORIGINS: "http://localhost:5173,http://localhost:3000"
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+
+volumes:
+  pgdata:

@@ -13,3 +13,8 @@ class UserOut(UserBase):
     class Config:
         from_attributes = True
 
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: constr(min_length=6)
+

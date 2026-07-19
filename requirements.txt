@@ -1,0 +1,21 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+gunicorn==23.0.0
+python-multipart==0.0.20          # required by OAuth2PasswordRequestForm (login form)
+
+# Data / ORM
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.10           # Postgres driver (RDS in Phase 2)
+alembic==1.14.0                   # DB migrations
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib==1.7.4
+bcrypt==4.0.1                     # pinned: passlib 1.7.4 breaks with bcrypt>=4.1
+
+# Config / models
+pydantic==2.10.4
+email-validator==2.2.0            # required by pydantic EmailStr (user schema)
+pydantic-settings==2.7.1
+python-dotenv==1.0.1

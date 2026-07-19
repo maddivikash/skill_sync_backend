@@ -1,0 +1,890 @@
+/* ============================================================
+   Additions: toasts, confirm dialog, select, profile/settings,
+   theme toggle, and the dark-theme variable overrides.
+   Loaded after global.css.
+   ============================================================ */
+
+/* ---------- Select (match input styling) ---------- */
+select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+select:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft-2);
+}
+
+/* ---------- Buttons (new variants) ---------- */
+.btn--danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn--danger:hover:not(:disabled) {
+  filter: brightness(0.93);
+}
+.btn--added {
+  background: var(--success-soft);
+  color: var(--success);
+  cursor: default;
+}
+
+/* ---------- Toasts ---------- */
+.toast-stack {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-lg);
+  animation: toast-in 0.2s ease;
+}
+.toast--success { border-left-color: var(--success); }
+.toast--error { border-left-color: var(--danger); }
+.toast--info { border-left-color: var(--brand); }
+.toast__icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.toast--success .toast__icon { background: var(--success); }
+.toast--error .toast__icon { background: var(--danger); }
+.toast--info .toast__icon { background: var(--brand); }
+.toast__msg { flex: 1; font-size: 0.88rem; }
+.toast__close {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 1.15rem;
+  cursor: pointer;
+  line-height: 1;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Confirm dialog ---------- */
+.modal--confirm { max-width: 430px; }
+.confirm__message {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  margin: 0 0 20px;
+  line-height: 1.55;
+}
+
+/* ---------- Theme toggle in header ---------- */
+.theme-toggle {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s;
+}
+.theme-toggle:hover { background: var(--surface-2); }
+
+/* ---------- Profile / settings ---------- */
+.page.profile { max-width: 760px; }
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+.settings-card__title { font-size: 1.05rem; margin-bottom: 16px; }
+.settings-card__profile { display: flex; align-items: center; gap: 16px; }
+.settings-card__name { font-weight: 650; font-size: 1.05rem; }
+.user-chip__avatar--lg {
+  width: 52px;
+  height: 52px;
+  font-size: 1.15rem;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.settings-row__label { font-weight: 600; }
+.settings-card--danger { border-color: var(--danger); }
+.theme-choice { display: flex; gap: 8px; }
+.theme-choice__btn {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.theme-choice__btn.is-active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+/* ============================================================
+   DARK THEME — override CSS variables. The attribute selector
+   outranks :root so this wins regardless of stylesheet order.
+   ============================================================ */
+:root[data-theme="dark"] {
+  --bg: #0f1115;
+  --surface: #171a21;
+  --surface-2: #1d2129;
+  --border: #2a2f3a;
+  --border-strong: #3a4150;
+
+  --text: #e8eaf0;
+  --text-muted: #a4abbb;
+  --text-soft: #79808f;
+
+  --brand: #8a82ff;
+  --brand-dark: #7a70f5;
+  --brand-soft: #23233c;
+  --brand-soft-2: #2c2d4d;
+
+  --success: #34d399;
+  --success-soft: #14331f;
+  --danger: #f27171;
+  --danger-soft: #3a1e1e;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+/* Header glass + auth gradient need dark-specific backgrounds */
+:root[data-theme="dark"] .app-header {
+  background: rgba(23, 26, 33, 0.85);
+}
+:root[data-theme="dark"] .auth-page {
+  background: radial-gradient(
+      1200px 600px at 50% -10%,
+      #2b1466 0%,
+      transparent 60%
+    ),
+    var(--bg);
+}
+
+/* Heatmap cells: dark-appropriate empty/future shades */
+:root[data-theme="dark"] .activity__cell {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="dark"] .activity__cell.lvl-0 { background: #262b36; }
+:root[data-theme="dark"] .activity__cell.is-future {
+  background: #1b1f27;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+/* ---------- Searchable combobox ---------- */
+.combobox { position: relative; }
+.combobox__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  max-height: 230px;
+  overflow: auto;
+  padding: 4px;
+  margin: 0;
+  list-style: none;
+}
+.combobox__option {
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.combobox__option.is-active { background: var(--brand-soft); color: var(--brand-dark); }
+.combobox__hint { margin-top: 6px; font-size: 0.75rem; color: var(--text-soft); }
+
+/* ---------- Suggestions wizard ---------- */
+.modal:has(.wizard) { max-width: 640px; }
+.wizard { display: flex; flex-direction: column; gap: 16px; }
+.wizard__steps { display: flex; gap: 6px; }
+.wizard__dot { height: 5px; flex: 1; border-radius: 3px; background: var(--border); transition: background 0.2s; }
+.wizard__dot.is-active { background: var(--brand); }
+.wizard__dot.is-done { background: var(--success); }
+.wizard__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.wizard__title { font-size: 1.12rem; }
+.wizard__count { font-size: 0.8rem; color: var(--text-soft); white-space: nowrap; }
+.wizard__sub { font-size: 0.85rem; color: var(--text-muted); margin: -8px 0 0; }
+.wizard__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(48vh, 420px);
+  overflow: auto;
+  padding-right: 4px;
+}
+.wizard__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.wizard__nav { display: flex; gap: 8px; }
+
+/* ---------- Kebab menu on goal cards ---------- */
+.kebab { position: relative; }
+.kebab__btn { font-size: 1.25rem; line-height: 1; }
+.kebab__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+}
+.kebab__item {
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 9px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.kebab__item:hover { background: var(--surface-2); }
+.kebab__item--danger { color: var(--danger); }
+.kebab__item--danger:hover { background: var(--danger-soft); }
+
+/* ---------- Goal card (clickable) ---------- */
+.goal-card--clickable { cursor: pointer; }
+.goal-card--clickable:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.goal-card.is-busy { opacity: 0.55; pointer-events: none; }
+.goal-card__top-right { display: flex; align-items: center; gap: 8px; }
+.section-head__actions { display: flex; gap: 8px; }
+
+/* ---------- Heatmap: month labels + custom tooltip ---------- */
+.activity__grid-area { display: flex; flex-direction: column; }
+.activity__months { display: flex; gap: 3px; height: 14px; margin-bottom: 4px; }
+.activity__month {
+  width: 13px;
+  font-size: 0.58rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: visible;
+}
+.activity__weekdays { padding-top: 18px; }
+
+.heat-tip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 10px));
+  background: #11141b;
+  color: #f3f4f8;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  min-width: 150px;
+  max-width: 260px;
+  z-index: 300;
+  pointer-events: none;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.heat-tip__date {
+  font-weight: 700;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.heat-tip__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.heat-tip__list li {
+  color: #c7cbd6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.heat-tip__list li::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: #40c463;
+  flex-shrink: 0;
+}
+.heat-tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #11141b;
+}
+
+/* ---------- XP card as a link ---------- */
+.activity__xp-card--link { text-decoration: none; cursor: pointer; transition: transform 0.1s, box-shadow 0.15s; }
+.activity__xp-card--link:hover { transform: translateY(-1px); }
+.activity__xp-card--wide { max-width: none; margin-bottom: 20px; }
+
+/* ---------- Activity page timeline ---------- */
+.activity-page { max-width: 760px; }
+.activity-stats { margin-bottom: 8px; }
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.timeline__item { display: flex; gap: 14px; padding: 14px 4px; border-bottom: 1px solid var(--border); }
+.timeline__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); margin-top: 5px; flex-shrink: 0; }
+.timeline__date { font-weight: 600; font-size: 0.92rem; }
+.timeline__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.timeline__chip {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 550;
+}
+
+/* ============================================================
+   V2 REFRESH — cohesive violet system (lyzr-inspired)
+   Loaded last, so these overrides win the cascade.
+   Everything lives in the violet/indigo family: one vivid
+   brand color, one signature gradient, soft violet glows.
+   NO gold — accents stay in the purple family so nothing
+   clashes with the deep-violet background. Dark-first.
+   ============================================================ */
+
+:root {
+  --font: "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  --font-display: "Space Grotesk Variable", "Inter Variable", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Signature gradient — used on XP card, primary button, brand mark */
+  --grad-brand: linear-gradient(135deg, #6a2bf5 0%, #9a45ff 50%, #cc4dff 100%);
+  --glow-brand: rgba(124, 60, 245, 0.42);
+
+  --radius-sm: 10px;
+  --radius: 16px;
+  --radius-lg: 22px;
+}
+
+/* ---------- LIGHT: cool near-white, cohesive violet ---------- */
+:root {
+  --brand: #6a3bf2;
+  --brand-dark: #5824e0;
+  --brand-soft: #f0ebfe;
+  --brand-soft-2: #e4dafc;
+
+  --bg: #f4f4fb;
+  --surface: #ffffff;
+  --surface-2: #f7f6fd;
+  --border: #e8e6f3;
+  --border-strong: #d7d3ec;
+
+  --shadow-sm: 0 1px 2px rgba(43, 33, 90, 0.05);
+  --shadow: 0 8px 26px rgba(43, 33, 90, 0.09), 0 1px 3px rgba(43, 33, 90, 0.05);
+  --shadow-lg: 0 26px 64px rgba(43, 33, 90, 0.2);
+}
+
+/* ---------- DARK: deep near-black violet, premium & glassy ---------- */
+:root[data-theme="dark"] {
+  --bg: #0a0912;
+  --surface: #15131f;
+  --surface-2: #1c1930;
+  --border: #2a2740;
+  --border-strong: #3c3760;
+
+  --text: #edecf6;
+  --text-muted: #aba7c8;
+  --text-soft: #7c789c;
+
+  --brand: #9c7bff;
+  --brand-dark: #8a5cff;
+  --brand-soft: #221a3d;
+  --brand-soft-2: #322559;
+
+  --success: #34d399;
+  --success-soft: #133026;
+  --danger: #f27171;
+  --danger-soft: #3a1e26;
+
+  --glow-brand: rgba(150, 90, 255, 0.5);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 30px 70px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------- Ambient background: violet aurora ---------- */
+body {
+  font-family: var(--font);
+  background:
+    radial-gradient(1100px 620px at 82% -12%, #ebe7ff 0%, transparent 55%),
+    radial-gradient(820px 480px at -8% 4%, #f0eaff 0%, transparent 52%),
+    var(--bg);
+  background-attachment: fixed;
+}
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(1100px 640px at 80% -14%, #2b1466 0%, transparent 56%),
+    radial-gradient(760px 520px at -6% 6%, #1f1052 0%, transparent 55%),
+    radial-gradient(900px 700px at 50% 120%, #2a0f4d 0%, transparent 60%),
+    var(--bg);
+}
+
+/* ---------- Display font: titles, brand, big numbers ---------- */
+h1, h2, h3,
+.brand__name,
+.auth-title,
+.page__title,
+.section-head__title,
+.overview-card__heading,
+.goal-card__title,
+.modal__title,
+.wizard__title,
+.suggest__title,
+.stat__value,
+.progress-ring__value,
+.activity__level-num,
+.activity__xp-value,
+.activity__stat-value {
+  font-family: var(--font-display);
+}
+.page__title { font-size: 1.9rem; letter-spacing: -0.03em; }
+.stat__value,
+.progress-ring__value,
+.activity__level-num,
+.activity__xp-value,
+.activity__stat-value { letter-spacing: -0.03em; }
+
+/* ---------- Glassy elevated cards with gradient hairline ---------- */
+.overview-card,
+.goal-card,
+.goal-hero,
+.settings-card,
+.suggest,
+.path-card,
+.activity__heat,
+.activity__stat,
+.empty-state {
+  border-radius: var(--radius);
+  position: relative;
+}
+.overview-card,
+.goal-hero,
+.settings-card,
+.suggest {
+  border-radius: var(--radius-lg);
+}
+:root[data-theme="dark"] .overview-card,
+:root[data-theme="dark"] .goal-card,
+:root[data-theme="dark"] .goal-hero,
+:root[data-theme="dark"] .settings-card,
+:root[data-theme="dark"] .suggest,
+:root[data-theme="dark"] .path-card,
+:root[data-theme="dark"] .activity__heat,
+:root[data-theme="dark"] .activity__stat {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, transparent 40%),
+    var(--surface);
+  border-color: rgba(255, 255, 255, 0.07);
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+:root[data-theme="dark"] .goal-card:hover {
+  border-color: rgba(154, 139, 255, 0.4);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(154, 139, 255, 0.25),
+    0 0 34px -12px var(--glow-brand);
+  transform: translateY(-2px);
+}
+
+/* ---------- Glass header ---------- */
+.app-header {
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+}
+:root[data-theme="dark"] .app-header {
+  background: rgba(12, 10, 22, 0.72);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+/* ---------- Brand mark + primary button: signature gradient + glow ---------- */
+.brand__mark {
+  background: var(--grad-brand);
+  box-shadow: 0 6px 18px -4px var(--glow-brand);
+}
+.btn--primary {
+  background: var(--grad-brand);
+  box-shadow: 0 8px 20px -6px var(--glow-brand);
+}
+.btn--primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 10px 26px -6px var(--glow-brand);
+}
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-soft-2);
+}
+
+/* ============================================================
+   XP CARD — the achievement signature, in the VIOLET family.
+   Richer gradient + violet glow + inner sheen so it still
+   reads as "special" without ever leaving the palette.
+   ============================================================ */
+.activity__xp-card,
+.activity__xp-card--link {
+  background:
+    linear-gradient(135deg, #6a2bf5 0%, #9a45ff 48%, #cc4dff 100%);
+  color: #fff;
+  box-shadow: 0 14px 36px -10px var(--glow-brand), var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.activity__xp-card::before,
+.activity__xp-card--link::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    360px 170px at 86% -30%,
+    rgba(255, 255, 255, 0.4) 0%,
+    transparent 68%
+  );
+  pointer-events: none;
+}
+.activity__xp-card--link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 46px -10px var(--glow-brand), var(--shadow);
+}
+.activity__level-badge {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+.activity__xp-next,
+.activity__xp-hint { color: rgba(255, 255, 255, 0.82); opacity: 1; }
+.activity__xp-track { background: rgba(255, 255, 255, 0.25); }
+.activity__xp-track .progress-bar__fill { background: #fff; }
+
+/* Streak stays on-brand (violet), not warm */
+.activity__today.is-on { color: var(--brand); }
+
+/* ---------- Progress ring + bars: violet with a soft glow ---------- */
+.progress-ring__fill {
+  stroke: var(--brand);
+  filter: drop-shadow(0 2px 8px var(--glow-brand));
+}
+.progress-bar__fill {
+  background: var(--grad-brand);
+}
+
+/* ---------- Meta pills & badges: subtle glassy chips ---------- */
+:root[data-theme="dark"] .meta-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme="dark"] .badge--active {
+  background: rgba(52, 211, 153, 0.14);
+  color: #4ade80;
+}
+
+/* ---------- Timeline dot glow ---------- */
+.timeline__dot { box-shadow: 0 0 0 3px var(--brand-soft); }
+
+/* ---------- Focus-visible polish ---------- */
+a:focus-visible,
+.icon-btn:focus-visible,
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   V2 REFRESH — layout & component fixes
+   ============================================================ */
+
+/* ---------- Learning paths: side-by-side grid, multi-open ---------- */
+.path-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 780px) {
+  .path-list { grid-template-columns: 1fr; }
+}
+
+/* ---------- Suggestions wizard: clickable category tabs ---------- */
+.wizard__tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.wizard__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.wizard__tab:hover { background: var(--surface-2); color: var(--text); }
+.wizard__tab.is-active {
+  background: var(--grad-brand);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 16px -6px var(--glow-brand);
+}
+.wizard__tab-label { line-height: 1; }
+
+/* ============================================================
+   TOAST — refreshed: glassy, rounded, on-brand
+   ============================================================ */
+.toast {
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left-width: 1px;
+  border-radius: 14px;
+  padding: 13px 15px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+}
+:root[data-theme="dark"] .toast {
+  background: rgba(26, 24, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+/* Kill the old colored left-border accent */
+.toast--success,
+.toast--error,
+.toast--info { border-left-color: var(--border); }
+.toast__icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  margin-top: 1px;
+}
+.toast--success .toast__icon { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }
+.toast--error .toast__icon { background: var(--danger); box-shadow: 0 0 0 4px var(--danger-soft); }
+.toast--info .toast__icon {
+  background: var(--brand);
+  box-shadow: 0 0 0 4px var(--brand-soft);
+}
+.toast__msg { font-size: 0.88rem; font-weight: 500; line-height: 1.4; }
+.toast__close {
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  transition: background 0.12s, color 0.12s;
+}
+.toast__close:hover { background: var(--surface-2); color: var(--text); }
+
+/* ============================================================
+   V3 — DESIGN LANGUAGE OVERHAUL  ("progress telemetry console")
+   Spends its boldness on: gradient display type, an editorial
+   eyebrow/label system, tabular instrument numerals, and the
+   overall-progress ring as a glowing hero instrument. Loaded
+   last so it wins the cascade.
+   ============================================================ */
+
+/* ---------- Wider canvas + generous rhythm ---------- */
+.app-header__inner { max-width: 1160px; padding: 18px 28px; }
+.page { max-width: 1160px; padding: 46px 28px 88px; }
+.page__head { margin-bottom: 34px; align-items: flex-start; }
+.dashboard-layout { gap: 28px; }
+.section-head { margin: 44px 0 18px; }
+
+/* ---------- Editorial eyebrow (tracked, display face) ---------- */
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin-bottom: 12px;
+}
+
+/* ---------- Display type scale ---------- */
+.page__title {
+  font-size: clamp(2.1rem, 1.35rem + 2.6vw, 2.95rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  /* signature: white → violet sweep */
+  background: linear-gradient(102deg, var(--text) 34%, #9a45ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.page__subtitle { font-size: 1.02rem; margin-top: 10px; max-width: 52ch; }
+
+/* Section titles get a gradient tick — a divider that means "new group" */
+.section-head__title {
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.section-head__title::before {
+  content: "";
+  width: 4px;
+  align-self: stretch;
+  min-height: 1.1em;
+  border-radius: 3px;
+  background: var(--grad-brand);
+  box-shadow: 0 0 14px -2px var(--glow-brand);
+}
+
+/* ---------- Instrument numerals: tabular, confident ---------- */
+.stat__value,
+.progress-ring__value,
+.activity__level-num,
+.activity__xp-value,
+.activity__stat-value,
+.goal-card__progress-count,
+.path-card__count {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+.stat__value { font-size: 1.8rem; }
+.progress-ring__value { font-size: 2.15rem; }
+.stat__label,
+.progress-ring__label { letter-spacing: 0.09em; }
+
+/* ============================================================
+   HERO CONSOLE — the overview card carries the signature.
+   Gradient hairline border + a soft violet floor-glow, with
+   the progress ring reading as a lit instrument.
+   ============================================================ */
+.overview-card {
+  padding: 36px;
+  gap: 40px;
+  position: relative;
+  border-radius: var(--radius-lg);
+}
+.overview-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(154, 69, 255, 0.55) 0%,
+    transparent 38%,
+    transparent 62%,
+    rgba(204, 77, 255, 0.4) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+:root[data-theme="dark"] .overview-card {
+  box-shadow: var(--shadow), 0 40px 80px -50px var(--glow-brand);
+}
+.overview-card__heading { font-size: 1.35rem; }
+.overview-card__desc { font-size: 1rem; margin-bottom: 22px; }
+.stat-row { gap: 34px; }
+
+/* Ring: lit instrument */
+.progress-ring__track { stroke: rgba(154, 123, 255, 0.16); }
+.progress-ring__fill { filter: drop-shadow(0 0 10px var(--glow-brand)); }
+
+/* ---------- Header presence ---------- */
+.brand__name { font-size: 1.25rem; }
+.brand__mark { width: 38px; height: 38px; }
+
+/* ---------- Pill buttons ---------- */
+.btn { border-radius: 999px; padding: 11px 20px; }
+.btn--sm { border-radius: 999px; padding: 7px 15px; }
+
+/* ---------- Goal cards: a touch more room ---------- */
+.goal-card { padding: 22px; gap: 18px; }
+.goal-card__title { font-size: 1.15rem; }
+
+/* ---------- Quality floor: respect reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .page { padding: 32px 18px 64px; }
+  .overview-card { padding: 24px; gap: 22px; }
+}

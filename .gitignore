@@ -1,2 +1,26 @@
 .env
+.env.*
 venv*
+.venv/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+*.sqlite3
+*.db
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+
+# Node / frontend build
+node_modules/
+dist/
+
+# Secrets / infra
+*.pem
+.aws/
+copilot/

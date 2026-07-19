@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.schemas.user import UserCreate, UserOut
-from app.crud.user import create_user
+from app.schemas.user import PasswordChange, UserCreate, UserOut
+from app.crud.user import create_user, verify_password
 from fastapi.security import OAuth2PasswordRequestForm
-from app.core.security import create_access_token, create_refresh_token
+from app.core.auth import create_access_token, create_refresh_token, decode_access_token
 from app.core.deps import get_current_user
 from app.db.deps import get_db
 from app.crud import user as crud_user
@@ -34,7 +34,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @router.post("/refresh")
 def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
-    payload = decode_token(refresh_token)
+    payload = decode_access_token(refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
@@ -50,9 +50,30 @@ def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     }
 
 
-@router.get("users/me", response_model=UserOut)
+@router.get("/users/me", response_model=UserOut)
 def get_current_logged_in_user(current_user=Depends(get_current_user)):
     return current_user
+
+
+@router.put("/users/me/password", response_model=dict)
+def change_password(
+    payload: PasswordChange,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    crud_user.update_password(db, current_user, payload.new_password)
+    return {"message": "Password updated successfully"}
+
+
+@router.post("/users/me/reset", response_model=dict)
+def reset_progress(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    deleted = crud_user.reset_user_data(db, current_user.id)
+    return {"message": f"Reset complete. Removed {deleted} goals and all their content."}
 
 @router.delete("/users/{user_id}", response_model=dict)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
