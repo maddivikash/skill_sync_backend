@@ -375,10 +375,20 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
             msg = resp.json()["choices"][0]["message"]
             tool_calls = msg.get("tool_calls")
             if not tool_calls:
-                return {"reply": (msg.get("content") or "").strip(),
-                        "changed": changed,
-                        "suggestions": suggestions if (active_goal_id or payload.goal_id) else [],
-                        "goal_id": active_goal_id or payload.goal_id}
+                target = active_goal_id or payload.goal_id
+                reply_text = (msg.get("content") or "").strip()
+                # No goal to add to → no chips, so spell out the suggestions in text.
+                if not target and suggestions:
+                    by: dict = {}
+                    for s in suggestions:
+                        by.setdefault(s["category"], []).append(s["name"])
+                    lines = [f"{c.capitalize()}s: " + ", ".join(by[c])
+                             for c in ("skill", "course", "tool", "project") if by.get(c)]
+                    if lines:
+                        reply_text = (reply_text + "\n\n" + "\n".join(lines)).strip()
+                return {"reply": reply_text, "changed": changed,
+                        "suggestions": suggestions if target else [],
+                        "goal_id": target}
 
             messages.append({"role": "assistant", "content": msg.get("content") or "",
                              "tool_calls": tool_calls})
