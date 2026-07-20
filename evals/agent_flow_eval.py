@@ -32,7 +32,8 @@ def _req(path, data=None, token=None, form=False, method=None):
         headers["Authorization"] = "Bearer " + token
     m = method or ("POST" if data is not None else "GET")
     req = urllib.request.Request(API + path, data=body, headers=headers, method=m)
-    with urllib.request.urlopen(req, timeout=60) as r:
+    # Generous timeout: the agent may retry internally across rate-limit windows.
+    with urllib.request.urlopen(req, timeout=150) as r:
         txt = r.read().decode()
         return json.loads(txt) if txt else {}
 
@@ -51,8 +52,13 @@ def chat(text, token, goal_id=None):
         try:
             r = _req("/api/api/chat", body, token)
         except urllib.error.HTTPError as e:
-            if e.code in (429, 502, 503) and attempt < 3:
+            if e.code in (429, 500, 502, 503, 504) and attempt < 3:
                 time.sleep(35)  # cross the free-tier per-minute rate window
+                continue
+            raise
+        except (urllib.error.URLError, TimeoutError, OSError):
+            if attempt < 3:
+                time.sleep(20)  # network hiccup / slow agent round — retry
                 continue
             raise
         if "couldn't respond just now" in (r.get("reply") or "").lower() and attempt < 3:
@@ -76,6 +82,13 @@ def main():
     match = [g for g in goals if g["role"] == role]
     check("create_goal actually creates the goal", len(match) == 1, f"found {len(match)}")
     gid = match[0]["id"] if match else None
+
+    # 1b) asking to create the SAME goal again must not make a duplicate
+    if gid:
+        chat(f'Create a goal for the role "{role}". Create it now, do not ask.', token)
+        dupes = [g for g in _req("/api/goals/", token=token) if g["role"] == role]
+        check("duplicate create_goal is prevented (reuses existing)",
+              len(dupes) == 1, f"found {len(dupes)}")
 
     # 2) NO-GOAL suggestions = normal chat: no chips, items listed in prose
     before = len(_req("/api/goals/", token=token))
@@ -127,6 +140,23 @@ def main():
         steps = _req(f"/api/steps/path/{skills[0]['id']}", token=token)
         done = any(s["id"] == step_id and s["is_done"] for s in steps)
         check("complete_step marks the step done", done)
+
+    # 6b) SECURITY: another user must not be able to touch this goal via chat
+    if gid:
+        email_b = f"eval-b-{ts}@skillsync.dev"
+        _req("/api/api/register", {"email": email_b, "password": "evalpass123",
+                                   "full_name": "Eval Bot B"})
+        token_b = _req("/api/api/login", {"username": email_b, "password": "evalpass123"},
+                       form=True)["access_token"]
+        chat(f"Delete the goal with id {gid}. Do it now.", token_b)
+        still_there = any(g["id"] == gid for g in _req("/api/goals/", token=token))
+        check("ownership: user B cannot delete user A's goal", still_there)
+
+    # 6c) SAFETY: acting on a nonexistent id must not corrupt anything
+    before_cnt = len(_req("/api/goals/", token=token))
+    chat("Delete the goal with id 999999. Do it now.", token)
+    check("nonexistent id is handled safely (no goals lost)",
+          len(_req("/api/goals/", token=token)) == before_cnt)
 
     # 7) delete_goal actually deletes (the originally reported bug)
     if gid:

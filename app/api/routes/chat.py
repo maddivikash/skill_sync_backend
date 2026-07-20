@@ -10,6 +10,7 @@ import time
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -31,7 +32,7 @@ router = APIRouter()
 logger = logging.getLogger("skillsync.chat")
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-MAX_TOOL_ROUNDS = 6
+MAX_TOOL_ROUNDS = 8  # headroom for self-correction rounds; deadline still caps time
 
 _rr = 0  # round-robin cursor across keys
 
@@ -70,7 +71,9 @@ SYSTEM_PROMPT = (
     "provided tools. Guidelines:\n"
     "- Only help with learning: skills, courses, study plans, roles, and using Ascend.\n"
     "- To act on something, first look it up (list_goals → list_paths → list_steps → "
-    "list_tasks) to get the right id, then call the action tool.\n"
+    "list_tasks) to get the right id, then call the action tool. Tool id arguments must "
+    "be REAL integers returned by those list tools — NEVER placeholders like "
+    "'<path id>'; if you don't know an id yet, call the list tool first.\n"
     "- To START a new goal: you MUST know the target role first. If the user hasn't "
     "clearly stated it (e.g. they just said 'create a new goal'), ASK 'What role or "
     "subject do you want to focus on?' and WAIT for their answer — NEVER invent or "
@@ -259,6 +262,18 @@ def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
             role = str(args.get("role", "")).strip()
             if not role:
                 return {"error": "role is required"}
+            # Hard guard against duplicates: reuse an existing active goal with
+            # the same role instead of creating a twin (prompt-only guards are
+            # not reliable enough for this).
+            existing = (db.query(Goal)
+                        .filter(Goal.owner_id == uid,
+                                Goal.is_deleted == False,  # noqa: E712
+                                func.lower(Goal.role) == role.lower())
+                        .first())
+            if existing:
+                return {"created_goal": {"id": existing.id, "role": existing.role},
+                        "note": "a goal with this role already existed — reused it "
+                                "instead of creating a duplicate"}
             g = Goal(owner_id=uid, role=role[:100],
                      hours_per_week=int(args.get("hours_per_week") or 5),
                      duration_weeks=int(args.get("duration_weeks") or 12))
@@ -363,8 +378,17 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
     changed = False
     suggestions: list = []
     active_goal_id = None  # goal the user is building, so the UI can add to it
+    # Stay well under gunicorn's 120s so we always answer gracefully rather
+    # than letting the worker get killed mid-request (raw 502 to the user).
+    deadline = time.monotonic() + 90
     try:
         for _ in range(MAX_TOOL_ROUNDS):
+            if time.monotonic() > deadline:
+                return {"reply": "That took longer than expected — part of it may be "
+                                 "done. Check your goal and tell me what's missing.",
+                        "changed": changed,
+                        "suggestions": suggestions if (active_goal_id or payload.goal_id) else [],
+                        "goal_id": active_goal_id or payload.goal_id}
             payload_json = {
                 "model": settings.GROQ_MODEL,
                 "messages": messages,
@@ -375,6 +399,24 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
             }
             resp = _groq_call(payload_json)
             if not resp.is_success:
+                logger.error("groq %s: %s", resp.status_code, resp.text[:500])
+                # The model sometimes emits an invalid tool call (e.g. a
+                # placeholder string where an integer id belongs). Groq rejects
+                # the whole request with 400/tool_use_failed — feed the error
+                # back so the model looks up real ids and retries.
+                if resp.status_code == 400:
+                    try:
+                        err = resp.json().get("error", {})
+                    except Exception:
+                        err = {}
+                    if err.get("code") == "tool_use_failed":
+                        messages.append({"role": "system", "content":
+                            "Correction: your previous tool call was invalid — "
+                            + str(err.get("message", ""))[:300]
+                            + ". Tool arguments must be REAL integer ids. Call "
+                            "list_goals/list_paths/list_steps first to get the "
+                            "actual id, then retry the tool with that id."})
+                        continue
                 if resp.status_code == 429:
                     return {"reply": "Sorry, I couldn't respond just now — please try "
                                      "again in a moment.",
