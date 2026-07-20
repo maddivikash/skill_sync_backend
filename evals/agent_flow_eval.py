@@ -165,11 +165,17 @@ def main():
     check("nonexistent id is handled safely (no goals lost)",
           len(_req("/api/goals/", token=token)) == before_cnt)
 
-    # 7) delete_goal actually deletes (the originally reported bug)
+    # 6d) bare delete request must ask for confirmation first (goal survives)
     if gid:
-        chat(f"Delete the goal with id {gid}. Do it now.", token)
+        chat(f"Delete the goal with id {gid}", token)
+        check("delete asks for confirmation first (goal survives)",
+              any(g["id"] == gid for g in _req("/api/goals/", token=token)))
+
+    # 7) confirmed delete actually deletes (the originally reported bug)
+    if gid:
+        chat(f"Delete the goal with id {gid}. Yes, I confirm, delete it now.", token)
         goals_after = _req("/api/goals/", token=token)
-        check("delete_goal actually deletes the goal",
+        check("confirmed delete_goal actually deletes the goal",
               all(g["id"] != gid for g in goals_after))
 
     passed = sum(results)

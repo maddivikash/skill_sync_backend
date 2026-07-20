@@ -1306,23 +1306,32 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .cal {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: 290px;   /* cap cell size (~34px); balanced margins */
+  gap: 5px;
+  max-width: 220px;   /* small, refined cells (~24px) */
   margin: 0 auto;
 }
 .cal__head,
 .cal__grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  gap: 5px;
 }
-.cal__dow { text-align: center; font-size: 0.66rem; color: var(--text-soft); }
+.cal__dow { text-align: center; font-size: 0.6rem; color: var(--text-soft); }
 .cal__grid .activity__cell {
   width: 100%;
   height: auto;
   aspect-ratio: 1 / 1;
-  border-radius: 6px;
+  border-radius: 5px;
 }
+/* Warm the inactive cells so they sit naturally on the cream card. */
+.activity__cell { box-shadow: inset 0 0 0 1px rgba(90, 70, 40, 0.06); }
+.activity__cell.lvl-0 { background: #ede7da; }
+.activity__cell.is-future {
+  background: #f5f1e8;
+  box-shadow: inset 0 0 0 1px rgba(90, 70, 40, 0.04);
+}
+:root[data-theme="dark"] .activity__cell.lvl-0 { background: #33291e; }
+:root[data-theme="dark"] .activity__cell.is-future { background: #2a2217; }
 .coach__title {
   display: block;
   font-family: var(--font-display);
