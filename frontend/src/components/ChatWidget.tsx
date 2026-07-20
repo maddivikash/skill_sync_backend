@@ -127,7 +127,7 @@ export default function ChatWidget() {
     setSuggestGoalId(null);
   }
 
-  // Move to the next category that has suggestions; clear chips when done.
+  // Move to the next category that has suggestions; wrap up when done.
   function advance() {
     const present = CAT_ORDER.filter((c) => suggestions.some((s) => s.category === c));
     setSelected(new Set());
@@ -135,6 +135,18 @@ export default function ChatWidget() {
       const next = i + 1;
       if (next >= present.length) {
         setSuggestions([]);
+        updateActive((s) => ({
+          ...s,
+          messages: [
+            ...s.messages,
+            {
+              role: "assistant",
+              content:
+                "Your goal is all set — you can see it on your dashboard and start checking things off. Anything else you'd like help with?",
+            },
+          ],
+          updated: Date.now(),
+        }));
         return 0;
       }
       return next;

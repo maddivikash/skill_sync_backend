@@ -20,12 +20,13 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_API_KEYS: ${GROQ_API_KEYS:-}
       GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
-      # Email (Gmail SMTP). Only the password is secret (from host .env).
-      SMTP_HOST: "smtp.gmail.com"
-      SMTP_PORT: "587"
-      SMTP_USER: "skillsync.mailer@gmail.com"
+      # Email (SMTP) — values come from the host .env so we can switch
+      # providers (Gmail -> SES) without touching this file.
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-skillsync.mailer@gmail.com}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      EMAIL_FROM: "Ascend <skillsync.mailer@gmail.com>"
+      EMAIL_FROM: ${EMAIL_FROM:-Ascend <skillsync.mailer@gmail.com>}
     restart: unless-stopped
 
   web:
