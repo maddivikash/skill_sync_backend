@@ -32,7 +32,33 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--split">
+      <div className="auth-hero">
+        <span className="eyebrow">Momentum for mastery</span>
+        <h1 className="auth-hero__title">
+          Rise to the role
+          <br />
+          <em>you're aiming for.</em>
+        </h1>
+        <p className="auth-hero__sub">
+          Pick a target role — engineer, designer, UPSC, anything — and Ascend
+          turns it into a living plan you can actually finish.
+        </p>
+        <ul className="auth-hero__points">
+          <li>
+            <strong>Structured paths.</strong> Skills, courses, tools and
+            projects, broken into steps and tasks.
+          </li>
+          <li>
+            <strong>An AI coach.</strong> Ask what to learn next — it builds
+            and updates your plan with you.
+          </li>
+          <li>
+            <strong>Momentum you can see.</strong> XP, levels and streaks
+            reward finishing, not just planning.
+          </li>
+        </ul>
+      </div>
       <div className="auth-card">
         <div className="auth-brand">
           <span className="brand__mark" aria-hidden="true">
