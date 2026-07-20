@@ -90,6 +90,13 @@ def main():
         check("duplicate create_goal is prevented (reuses existing)",
               len(dupes) == 1, f"found {len(dupes)}")
 
+    # 1c) "I want to learn X" = interest, not a create request: must ask first
+    before = len(_req("/api/goals/", token=token))
+    chat("I want to learn photography", token)
+    after = len(_req("/api/goals/", token=token))
+    check("'I want to learn X' does not create a goal (asks first)",
+          after == before, f"{before}->{after}")
+
     # 2) NO-GOAL suggestions = normal chat: no chips, items listed in prose
     before = len(_req("/api/goals/", token=token))
     r = chat("Give me suggestions for Data Scientist. Do not create a goal.", token)
