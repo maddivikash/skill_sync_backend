@@ -5,6 +5,7 @@ import {
   listPaths,
   sendChat,
   type ChatMsg,
+  type ChatSuggestion,
 } from "../api/endpoints";
 
 const PLURAL: Record<string, string> = {
@@ -77,9 +78,7 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<
-    { name: string; category: string }[]
-  >([]);
+  const [suggestions, setSuggestions] = useState<ChatSuggestion[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [goalId, setGoalId] = useState<number | null>(null); // persistent context for the coach
   const [suggestGoalId, setSuggestGoalId] = useState<number | null>(null); // goal the CURRENT chips add to
@@ -128,29 +127,29 @@ export default function ChatWidget() {
   }
 
   // Move to the next category that has suggestions; wrap up when done.
+  // NOTE: no side effects inside setState updaters — React may replay them,
+  // which duplicated the wrap-up message.
   function advance() {
     const present = CAT_ORDER.filter((c) => suggestions.some((s) => s.category === c));
     setSelected(new Set());
-    setCatIndex((i) => {
-      const next = i + 1;
-      if (next >= present.length) {
-        setSuggestions([]);
-        updateActive((s) => ({
-          ...s,
-          messages: [
-            ...s.messages,
-            {
-              role: "assistant",
-              content:
-                "Your goal is all set — you can see it on your dashboard and start checking things off. Anything else you'd like help with?",
-            },
-          ],
-          updated: Date.now(),
-        }));
-        return 0;
-      }
-      return next;
-    });
+    if (catIndex + 1 >= present.length) {
+      setSuggestions([]);
+      setCatIndex(0);
+      updateActive((s) => ({
+        ...s,
+        messages: [
+          ...s.messages,
+          {
+            role: "assistant",
+            content:
+              "Your goal is all set — you can see it on your dashboard and start checking things off. Anything else you'd like help with?",
+          },
+        ],
+        updated: Date.now(),
+      }));
+    } else {
+      setCatIndex(catIndex + 1);
+    }
   }
 
   function startNew() {
@@ -239,7 +238,7 @@ export default function ChatWidget() {
     try {
       const chosen = suggestions.filter((s) => selected.has(keyOf(s)));
       const paths = await listPaths(suggestGoalId);
-      const byCat: Record<string, { name: string; category: string }[]> = {};
+      const byCat: Record<string, ChatSuggestion[]> = {};
       chosen.forEach((s) => (byCat[s.category] ??= []).push(s));
       for (const cat of Object.keys(byCat)) {
         const title = PLURAL[cat] || "Skills";
@@ -253,7 +252,19 @@ export default function ChatWidget() {
           });
         }
         for (const item of byCat[cat]) {
-          await createStep(path.id, { title: item.name });
+          // Preserve course links/meta the same way the wizard does.
+          const desc =
+            item.category === "course"
+              ? [
+                  [item.provider, item.estimated_hours ? `~${item.estimated_hours}h` : null]
+                    .filter(Boolean)
+                    .join(" · "),
+                  item.url,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : item.description || undefined;
+          await createStep(path.id, { title: item.name, description: desc || undefined });
         }
       }
       window.dispatchEvent(new Event("skillsync:data-changed"));

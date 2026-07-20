@@ -81,10 +81,17 @@ SYSTEM_PROMPT = (
     "then suggest_for_role. The suggestions appear as selectable chips the USER picks and "
     "adds via the UI — so after suggesting, do NOT add them yourself with tools. Just "
     "create the goal, suggest, and let them choose. Keep it conversational.\n"
-    "- Use suggest_for_role ONLY when adding to a specific goal (its chips need a goal). "
-    "For a plain 'what should I learn / give me suggestions for X' with NO active goal, do "
-    "NOT call suggest_for_role — just answer conversationally in prose with concrete, named "
-    "skills, courses, and tools the user can read.\n"
+    "- Use suggest_for_role ONLY when the user wants to ADD items to a specific goal "
+    "(right after creating one, or when they ask to add more). For a plain 'what should I "
+    "learn / give me suggestions for X' with NO active goal, do NOT call suggest_for_role — "
+    "answer in prose with concrete, named skills, courses, and tools.\n"
+    "- When the user says 'let's start with X', 'teach me X', or 'how do I learn X' about "
+    "something already in their goal, they want GUIDANCE, not more items: give a short, "
+    "ordered study plan in prose (learn A first, then B; practice with C). Do NOT call "
+    "suggest_for_role for that.\n"
+    "- Never mention chips, selecting, buttons, or any interface mechanics. When options "
+    "will be shown, just say something like 'pick any of the options below to add them to "
+    "your goal.'\n"
     "- Only call create_goal when the user EXPLICITLY asks to create/start a goal. "
     "'Get suggestions for X' or 'what should I learn for X' means call suggest_for_role "
     "and show them — do NOT create a goal. Never create the same goal twice.\n"
@@ -285,12 +292,20 @@ def run_tool(name: str, args: dict, db: Session, uid: int) -> dict:
             grouped = data.get("items", {}) or {}
             out = {}
             for cat in ("skill", "course", "tool", "project"):
-                names = []
+                items = []
                 for it in (grouped.get(cat, []) or [])[:6]:
-                    n = it.get("name") if isinstance(it, dict) else getattr(it, "name", None)
-                    if n:
-                        names.append(n)
-                out[cat] = names
+                    d = it if isinstance(it, dict) else {
+                        "name": getattr(it, "name", None),
+                        "description": getattr(it, "description", None),
+                        "provider": getattr(it, "provider", None),
+                        "url": getattr(it, "url", None),
+                        "estimated_hours": getattr(it, "estimated_hours", None),
+                    }
+                    if d.get("name"):
+                        items.append({k: d.get(k) for k in
+                                      ("name", "description", "provider", "url",
+                                       "estimated_hours")})
+                out[cat] = items
             return out
 
         if name == "create_path":
@@ -456,9 +471,10 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                     changed = True
                 # Surface suggestions as selectable chips in the chat.
                 if fname == "suggest_for_role" and isinstance(result, dict):
-                    suggestions = [{"name": nm, "category": cat}
+                    suggestions = [{"category": cat, **it}
                                    for cat in ("skill", "course", "tool", "project")
-                                   for nm in (result.get(cat) or [])]
+                                   for it in (result.get(cat) or [])
+                                   if isinstance(it, dict) and it.get("name")]
                 # Remember the goal being built so the UI can add chips to it.
                 if fname == "create_goal" and isinstance(result, dict) and result.get("created_goal"):
                     active_goal_id = result["created_goal"]["id"]

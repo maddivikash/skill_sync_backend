@@ -16,6 +16,10 @@ class ChatRequest(BaseModel):
 class ChatSuggestion(BaseModel):
     name: str
     category: str
+    description: Optional[str] = None
+    provider: Optional[str] = None
+    url: Optional[str] = None
+    estimated_hours: Optional[int] = None
 
 
 class ChatReply(BaseModel):

@@ -66,6 +66,10 @@ export interface ChatMsg {
 export interface ChatSuggestion {
   name: string;
   category: string;
+  description?: string | null;
+  provider?: string | null;
+  url?: string | null;
+  estimated_hours?: number | null;
 }
 export function sendChat(
   messages: ChatMsg[],
