@@ -142,7 +142,7 @@ export default function ChatWidget() {
           {
             role: "assistant",
             content:
-              "Your goal is all set — you can see it on your dashboard and start checking things off. Anything else you'd like help with?",
+              "Your goal is all set. You can see it on your dashboard and start checking things off. Anything else you'd like help with?",
           },
         ],
         updated: Date.now(),
@@ -385,7 +385,7 @@ export default function ChatWidget() {
                 return (
                   <div className="coach__suggest">
                     <div className="coach__suggest-head">
-                      <span>{PLURAL[cat]} — pick what fits</span>
+                      <span>{PLURAL[cat]}: pick what fits</span>
                       <span className="coach__suggest-step">
                         {catIndex + 1}/{present.length}
                       </span>

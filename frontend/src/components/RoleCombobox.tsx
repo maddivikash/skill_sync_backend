@@ -91,7 +91,7 @@ export default function RoleCombobox({ roles, value, onChange }: Props) {
       )}
       {open && noMatch && (
         <div className="combobox__hint">
-          No preset match — “{value.trim()}” will be used as a custom role.
+          No preset match. “{value.trim()}” will be used as a custom role.
         </div>
       )}
     </div>

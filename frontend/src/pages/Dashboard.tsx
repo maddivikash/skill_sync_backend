@@ -326,7 +326,7 @@ export default function Dashboard() {
             <span className="field__label">Target role</span>
             <RoleCombobox roles={roles} value={role} onChange={setRole} />
             <span className="field__hint">
-              Search a preset role or type your own — you'll get tailored
+              Search a preset role or type your own. You'll get tailored
               suggestions next.
             </span>
           </label>

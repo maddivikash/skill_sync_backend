@@ -41,8 +41,8 @@ export default function Login() {
           <em>you're aiming for.</em>
         </h1>
         <p className="auth-hero__sub">
-          Pick a target role — engineer, designer, UPSC, anything — and Ascend
-          turns it into a living plan you can actually finish.
+          Pick a target role: engineer, designer, UPSC, anything. Ascend turns
+          it into a living plan you can actually finish.
         </p>
         <ul className="auth-hero__points">
           <li>
@@ -50,8 +50,8 @@ export default function Login() {
             projects, broken into steps and tasks.
           </li>
           <li>
-            <strong>An AI coach.</strong> Ask what to learn next — it builds
-            and updates your plan with you.
+            <strong>An AI coach.</strong> Ask what to learn next and it builds
+            your plan with you.
           </li>
           <li>
             <strong>Momentum you can see.</strong> XP, levels and streaks

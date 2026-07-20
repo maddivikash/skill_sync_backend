@@ -174,9 +174,9 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
         </div>
         <p className="wizard__sub">
           {data?.matched ? (
-            <>Curated for <strong>{data.label}</strong>. Add what fits — you can change everything later.</>
+            <>Curated for <strong>{data.label}</strong>. Add what fits. You can change everything later.</>
           ) : (
-            <>General picks for “{role}”. Add what fits — you can change everything later.</>
+            <>General picks for “{role}”. Add what fits. You can change everything later.</>
           )}
         </p>
 

@@ -155,7 +155,7 @@ export default function PathSection({ path, expanded, onToggle, onDeleted, asTab
           {loading ? (
             <p className="muted-note">Loading steps…</p>
           ) : steps.length === 0 ? (
-            <p className="muted-note">No steps yet — add one to get started.</p>
+            <p className="muted-note">No steps yet. Add one to get started.</p>
           ) : (
             <div className="step-list">
               {steps.map((step) => (

@@ -106,7 +106,8 @@ SYSTEM_PROMPT = (
     "category path is missing in the chosen goal.\n"
     "- After acting, tell the user in one short sentence what you did.\n"
     "- If a request is ambiguous (e.g. which goal), ask a brief clarifying question.\n"
-    "- Be concise and practical. Plain text, minimal formatting."
+    "- Be concise and practical. Plain text, minimal formatting. Never use em dashes "
+    "(—) in replies; use commas or periods instead."
 )
 
 TOOLS = [
@@ -399,7 +400,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
     try:
         for _ in range(MAX_TOOL_ROUNDS):
             if time.monotonic() > deadline:
-                return {"reply": "That took longer than expected — part of it may be "
+                return {"reply": "That took longer than expected. Part of it may be "
                                  "done. Check your goal and tell me what's missing.",
                         "changed": changed,
                         "suggestions": suggestions if (active_goal_id or payload.goal_id) else [],
@@ -433,7 +434,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                             "actual id, then retry the tool with that id."})
                         continue
                 if resp.status_code == 429:
-                    return {"reply": "Sorry, I couldn't respond just now — please try "
+                    return {"reply": "Sorry, I couldn't respond just now. Please try "
                                      "again in a moment.",
                             "changed": changed,
                         "suggestions": suggestions if (active_goal_id or payload.goal_id) else [],
@@ -480,7 +481,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                     active_goal_id = result["created_goal"]["id"]
                 messages.append({"role": "tool", "tool_call_id": tc["id"],
                                  "content": json.dumps(result)})
-        return {"reply": "I couldn't finish that — try rephrasing or breaking it into steps.",
+        return {"reply": "I couldn't finish that. Try rephrasing or breaking it into steps.",
                 "changed": changed,
                         "suggestions": suggestions if (active_goal_id or payload.goal_id) else [],
                         "goal_id": active_goal_id or payload.goal_id}
