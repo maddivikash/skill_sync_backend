@@ -69,6 +69,7 @@ function freshSession(): Session {
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [sessions, setSessions] = useState<Session[]>(() => {
     const s = loadSessions();
     return s.length ? s : [freshSession()];
@@ -291,6 +292,161 @@ export default function ChatWidget() {
     }
   }
 
+  const sessionList = (
+    <div className="coach__sessions">
+      {sessions.map((s) => (
+        <div
+          key={s.id}
+          className={`coach__session ${s.id === active.id ? "is-active" : ""}`}
+        >
+          <button className="coach__session-title" onClick={() => switchTo(s.id)}>
+            {s.title || "New chat"}
+          </button>
+          <button
+            className="coach__session-del"
+            onClick={() => deleteSession(s.id)}
+            aria-label="Delete chat"
+            title="Delete chat"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
+  const bodyContent = (
+    <div className="coach__body" ref={bodyRef}>
+      {active.messages.map((m, i) => (
+        <div
+          key={i}
+          className={`coach__msg coach__msg--${m.role}`}
+          dangerouslySetInnerHTML={{ __html: fmt(m.content) }}
+        />
+      ))}
+      {busy && (
+        <div className="coach__msg coach__msg--assistant coach__msg--typing">
+          Thinking…
+        </div>
+      )}
+      {!busy &&
+        suggestions.length > 0 &&
+        (() => {
+          const present = CAT_ORDER.filter((c) =>
+            suggestions.some((s) => s.category === c)
+          );
+          const cat = present[catIndex];
+          if (!cat) return null;
+          const chips = suggestions.filter((s) => s.category === cat);
+          return (
+            <div className="coach__suggest">
+              <div className="coach__suggest-head">
+                <span>{PLURAL[cat]}: pick what fits</span>
+                <span className="coach__suggest-step">
+                  {catIndex + 1}/{present.length}
+                </span>
+              </div>
+              <div className="coach__chips">
+                {chips.map((sg, i) => {
+                  const on = selected.has(keyOf(sg));
+                  return (
+                    <button
+                      key={i}
+                      className={`coach__chip ${on ? "is-selected" : ""}`}
+                      onClick={() => toggleChip(sg)}
+                    >
+                      {on ? "✓ " : "+ "}
+                      {sg.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="coach__suggest-actions">
+                {suggestGoalId && selected.size > 0 && (
+                  <button
+                    className="btn btn--primary btn--sm"
+                    onClick={addSelected}
+                    disabled={adding}
+                  >
+                    {adding ? "Adding…" : `Add ${selected.size}`}
+                  </button>
+                )}
+                <button
+                  className="btn btn--ghost btn--sm"
+                  onClick={advance}
+                  disabled={adding}
+                >
+                  {catIndex + 1 < present.length ? "Skip →" : "Done"}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      {error && <div className="coach__error">{error}</div>}
+    </div>
+  );
+
+  const inputForm = (
+    <form className="coach__input" onSubmit={handleSend}>
+      <input
+        type="text"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Ask about a skill or course…"
+        disabled={busy}
+        autoFocus
+      />
+      <button
+        className="btn btn--primary btn--sm"
+        type="submit"
+        disabled={busy || !input.trim()}
+      >
+        Send
+      </button>
+    </form>
+  );
+
+  const EXAMPLES = [
+    "What should I learn to become a backend engineer?",
+    "Give me a study plan for SQL.",
+    "Suggest courses for my active goal.",
+  ];
+
+  const header = (
+    <div className="coach__head">
+      <div className="coach__head-main">
+        <span className="coach__title">Ascend Coach</span>
+        <span className="coach__sub">Learning &amp; courses only</span>
+      </div>
+      <div className="coach__head-actions">
+        <button className="coach__icon" onClick={startNew} title="New chat" aria-label="New chat">
+          ＋
+        </button>
+        {!expanded && (
+          <button
+            className={`coach__icon ${showList ? "is-active" : ""}`}
+            onClick={() => setShowList((v) => !v)}
+            title="Chat history"
+            aria-label="Chat history"
+          >
+            ☰
+          </button>
+        )}
+        <button
+          className="coach__icon"
+          onClick={() => setExpanded((v) => !v)}
+          title={expanded ? "Collapse to side" : "Expand to center"}
+          aria-label={expanded ? "Collapse to side" : "Expand to center"}
+        >
+          {expanded ? "⤡" : "⤢"}
+        </button>
+        <button className="coach__close" onClick={() => setOpen(false)} aria-label="Close coach">
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       {!open && (
@@ -305,151 +461,53 @@ export default function ChatWidget() {
       )}
 
       {open && (
-        <div className="coach" role="dialog" aria-label="Ascend Coach">
-          <div className="coach__head">
-            <div className="coach__head-main">
-              <span className="coach__title">Ascend Coach</span>
-              <span className="coach__sub">Learning &amp; courses only</span>
-            </div>
-            <div className="coach__head-actions">
-              <button
-                className="coach__icon"
-                onClick={startNew}
-                title="New chat"
-                aria-label="New chat"
-              >
-                ＋
-              </button>
-              <button
-                className={`coach__icon ${showList ? "is-active" : ""}`}
-                onClick={() => setShowList((v) => !v)}
-                title="Chat history"
-                aria-label="Chat history"
-              >
-                ☰
-              </button>
-              <button
-                className="coach__close"
-                onClick={() => setOpen(false)}
-                aria-label="Close coach"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
+        <div className={`coach-shell ${expanded ? "coach-shell--expanded" : ""}`}>
+          <div
+            className={`coach ${expanded ? "coach--expanded" : ""}`}
+            role="dialog"
+            aria-label="Ascend Coach"
+          >
+            {header}
 
-          {showList && (
-            <div className="coach__sessions">
-              {sessions.map((s) => (
-                <div
-                  key={s.id}
-                  className={`coach__session ${s.id === active.id ? "is-active" : ""}`}
-                >
-                  <button
-                    className="coach__session-title"
-                    onClick={() => switchTo(s.id)}
-                  >
-                    {s.title || "New chat"}
+            {expanded ? (
+              <div className="coach__frame">
+                <aside className="coach__pane coach__pane--history">
+                  <button className="btn btn--soft btn--sm coach__newchat" onClick={startNew}>
+                    ＋ New chat
                   </button>
-                  <button
-                    className="coach__session-del"
-                    onClick={() => deleteSession(s.id)}
-                    aria-label="Delete chat"
-                    title="Delete chat"
-                  >
-                    ×
-                  </button>
+                  <div className="coach__pane-label">History</div>
+                  {sessionList}
+                </aside>
+                <div className="coach__center">
+                  {bodyContent}
+                  {inputForm}
                 </div>
-              ))}
-            </div>
-          )}
-
-          <div className="coach__body" ref={bodyRef}>
-            {active.messages.map((m, i) => (
-              <div
-                key={i}
-                className={`coach__msg coach__msg--${m.role}`}
-                dangerouslySetInnerHTML={{ __html: fmt(m.content) }}
-              />
-            ))}
-            {busy && (
-              <div className="coach__msg coach__msg--assistant coach__msg--typing">
-                Thinking…
+                <aside className="coach__pane coach__pane--aside">
+                  <div className="coach__pane-label">Try asking</div>
+                  {EXAMPLES.map((ex, i) => (
+                    <button
+                      key={i}
+                      className="coach__example"
+                      onClick={() => sendMessage(ex)}
+                      disabled={busy}
+                    >
+                      {ex}
+                    </button>
+                  ))}
+                  <p className="coach__aside-note">
+                    Tip: for a specific skill, tool, or course, open it and use
+                    “Learn here” to get a guided, step by step session.
+                  </p>
+                </aside>
               </div>
+            ) : (
+              <>
+                {showList && sessionList}
+                {bodyContent}
+                {inputForm}
+              </>
             )}
-            {!busy &&
-              suggestions.length > 0 &&
-              (() => {
-                const present = CAT_ORDER.filter((c) =>
-                  suggestions.some((s) => s.category === c)
-                );
-                const cat = present[catIndex];
-                if (!cat) return null;
-                const chips = suggestions.filter((s) => s.category === cat);
-                return (
-                  <div className="coach__suggest">
-                    <div className="coach__suggest-head">
-                      <span>{PLURAL[cat]}: pick what fits</span>
-                      <span className="coach__suggest-step">
-                        {catIndex + 1}/{present.length}
-                      </span>
-                    </div>
-                    <div className="coach__chips">
-                      {chips.map((sg, i) => {
-                        const on = selected.has(keyOf(sg));
-                        return (
-                          <button
-                            key={i}
-                            className={`coach__chip ${on ? "is-selected" : ""}`}
-                            onClick={() => toggleChip(sg)}
-                          >
-                            {on ? "✓ " : "+ "}
-                            {sg.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="coach__suggest-actions">
-                      {suggestGoalId && selected.size > 0 && (
-                        <button
-                          className="btn btn--primary btn--sm"
-                          onClick={addSelected}
-                          disabled={adding}
-                        >
-                          {adding ? "Adding…" : `Add ${selected.size}`}
-                        </button>
-                      )}
-                      <button
-                        className="btn btn--ghost btn--sm"
-                        onClick={advance}
-                        disabled={adding}
-                      >
-                        {catIndex + 1 < present.length ? "Skip →" : "Done"}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-            {error && <div className="coach__error">{error}</div>}
           </div>
-
-          <form className="coach__input" onSubmit={handleSend}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about a skill or course…"
-              disabled={busy}
-              autoFocus
-            />
-            <button
-              className="btn btn--primary btn--sm"
-              type="submit"
-              disabled={busy || !input.trim()}
-            >
-              Send
-            </button>
-          </form>
         </div>
       )}
     </>
