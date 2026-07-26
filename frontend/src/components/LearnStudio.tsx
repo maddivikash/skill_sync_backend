@@ -120,7 +120,7 @@ export default function LearnStudio({
 
   // Close on Escape.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && handleClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -255,9 +255,12 @@ export default function LearnStudio({
       if (!current.is_done) {
         await updateTask(current.id, { is_done: true });
         logActivity("complete_task");
+        // Reflect locally; do NOT refresh the parent here (that remounts and
+        // closes the modal). The parent refreshes once when the modal closes.
+        setQueue((q) =>
+          q.map((t) => (t.id === current.id ? { ...t, is_done: true } : t))
+        );
       }
-      onChanged();
-      window.dispatchEvent(new Event("skillsync:data-changed"));
       if (idx + 1 >= queue.length) setPhase("done");
       else setIdx((i) => i + 1);
     } catch (err) {
@@ -265,6 +268,13 @@ export default function LearnStudio({
     } finally {
       setBusy(false);
     }
+  }
+
+  // Refresh the underlying goal/dashboard once, then close.
+  function handleClose() {
+    onChanged();
+    window.dispatchEvent(new Event("skillsync:data-changed"));
+    onClose();
   }
 
   async function completeStep() {
@@ -290,7 +300,12 @@ export default function LearnStudio({
   const cat = plan?.category ?? "topic";
 
   return (
-    <div className="learn-overlay" onClick={onClose}>
+    <div
+      className="learn-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div
         className="learn-modal"
         onClick={(e) => e.stopPropagation()}
@@ -302,7 +317,7 @@ export default function LearnStudio({
             <span className="learn-modal__eyebrow">Learn with coach</span>
             <h2 className="learn-modal__title">{stepTitle}</h2>
           </div>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">
+          <button className="icon-btn" onClick={handleClose} aria-label="Close">
             ×
           </button>
         </header>
@@ -450,7 +465,7 @@ export default function LearnStudio({
               Mark this {cat} as completed?
             </p>
             <div className="learn-modal__actions">
-              <button className="btn btn--ghost" onClick={onClose}>
+              <button className="btn btn--ghost" onClick={handleClose}>
                 Not yet
               </button>
               <button className="btn btn--primary" onClick={completeStep} disabled={busy}>
