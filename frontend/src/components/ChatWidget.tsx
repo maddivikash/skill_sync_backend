@@ -17,6 +17,7 @@ const PLURAL: Record<string, string> = {
 const CAT_ORDER = ["skill", "course", "tool", "project"];
 
 const STORE_KEY = "skillsync_chat_v1";
+const INTRO_KEY = "skillsync_coach_intro_v1"; // one-time focus-view intro
 const GREETING: ChatMsg = {
   role: "assistant",
   content:
@@ -69,7 +70,10 @@ function freshSession(): Session {
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  // First time ever, open in the wide focus view and show a one-time intro.
+  const firstTime = !localStorage.getItem(INTRO_KEY);
+  const [expanded, setExpanded] = useState(firstTime);
+  const [showTour, setShowTour] = useState(firstTime);
   const [sessions, setSessions] = useState<Session[]>(() => {
     const s = loadSessions();
     return s.length ? s : [freshSession()];
@@ -110,6 +114,19 @@ export default function ChatWidget() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
+
+  // Once the user leaves the focus view, the intro has served its purpose.
+  useEffect(() => {
+    if (!expanded && showTour) {
+      localStorage.setItem(INTRO_KEY, "1");
+      setShowTour(false);
+    }
+  }, [expanded, showTour]);
+
+  function dismissTour() {
+    localStorage.setItem(INTRO_KEY, "1");
+    setShowTour(false);
+  }
 
   // Push the app content left while the drawer is open.
   useEffect(() => {
@@ -482,6 +499,20 @@ export default function ChatWidget() {
             aria-label="Ascend Coach"
           >
             {header}
+
+            {expanded && showTour && (
+              <div className="coach-tour">
+                <span className="coach-tour__text">
+                  <strong>This is the focus view.</strong> Use this wide space
+                  for longer learning and new sessions (your history is on the
+                  left ↖). For a quick question, collapse it (⤡, top right) to a
+                  short chat docked on the right.
+                </span>
+                <button className="btn btn--primary btn--sm" onClick={dismissTour}>
+                  Got it
+                </button>
+              </div>
+            )}
 
             {expanded ? (
               <div className="coach__frame">

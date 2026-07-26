@@ -1762,3 +1762,20 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   .coach__frame { grid-template-columns: 1fr; }
   .coach__pane { display: none; } /* on small screens, expanded = just the wide chat */
 }
+
+/* ---------- Coach: one-time focus-view intro strip ---------- */
+.coach-tour {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  background: var(--brand-soft);
+  border-bottom: 1px solid var(--border);
+}
+.coach-tour__text {
+  flex: 1;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.coach-tour .btn { white-space: nowrap; }
