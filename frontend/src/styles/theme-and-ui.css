@@ -1779,3 +1779,29 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   color: var(--text);
 }
 .coach-tour .btn { white-space: nowrap; }
+
+/* ---------- Learn Studio: in-chat action pills ---------- */
+.learn-pills {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.learn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--brand);
+  background: var(--brand);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: filter 0.12s, transform 0.1s;
+}
+.learn-pill:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.learn-pills__hint { font-size: 0.8rem; color: var(--text-soft); }

@@ -142,10 +142,19 @@ export default function LearnStudio({
     if (phase === "learning" && current) kickoff(current);
   }, [phase, current, kickoff]);
 
+  // Typing "next" / "done" / "move on" advances the flow through chat, no button.
+  const ADVANCE_RE =
+    /^(next|next topic|done|mark (it )?done|complete|move on|got it,?\s*next|continue)\.?$/i;
+
   async function send(e: FormEvent) {
     e.preventDefault();
     const text = input.trim();
     if (!text || busy || !current) return;
+    if (ADVANCE_RE.test(text)) {
+      setInput("");
+      markDoneNext();
+      return;
+    }
     const history = [...thread, { role: "user" as const, content: text }];
     setThreads((t) => ({ ...t, [current.id]: history }));
     setInput("");
@@ -317,6 +326,16 @@ export default function LearnStudio({
                 </div>
               ))}
               {busy && <div className="learn-bubble learn-bubble--assistant">Thinking…</div>}
+              {!busy && thread.some((m) => m.role === "assistant") && (
+                <div className="learn-pills">
+                  <button className="learn-pill learn-pill--primary" onClick={markDoneNext}>
+                    ✓ Mark done {idx + 1 >= queue.length ? "& finish" : "& next"}
+                  </button>
+                  <span className="learn-pills__hint">
+                    or keep chatting to go deeper
+                  </span>
+                </div>
+              )}
             </div>
             <div className="learn-modal__foot">
               <form onSubmit={send} className="learn-input-row">
@@ -325,8 +344,8 @@ export default function LearnStudio({
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
                     mode === "interactive"
-                      ? "Answer or ask a question…"
-                      : "Ask a follow up…"
+                      ? "Answer, ask a question, or type “next”…"
+                      : "Ask a follow up, or type “next”…"
                   }
                   disabled={busy}
                 />
@@ -334,13 +353,6 @@ export default function LearnStudio({
                   Send
                 </button>
               </form>
-              <button
-                className="btn btn--primary btn--sm"
-                onClick={markDoneNext}
-                disabled={busy}
-              >
-                {idx + 1 >= queue.length ? "Finish" : "Mark done & next →"}
-              </button>
             </div>
           </>
         )}
