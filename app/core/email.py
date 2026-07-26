@@ -59,15 +59,10 @@ def _reset_html(reset_link: str, minutes: int) -> str:
             </td></tr>
           </table>
         </td></tr>
-        <tr><td style="padding:24px 36px 0 36px;">
-          <p style="margin:0 0 6px 0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-                    font-size:13px;line-height:1.6;color:#8a7f6f;">
-            This link is valid for {minutes} minutes. If the button does not work,
-            copy and paste this URL into your browser:
-          </p>
-          <p style="margin:0 0 24px 0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-                    font-size:12px;line-height:1.5;word-break:break-all;color:#a8492f;">
-            {reset_link}
+        <tr><td style="padding:20px 36px 4px 36px;">
+          <p style="margin:0 0 20px 0;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+                    font-size:13px;line-height:1.6;color:#8a7f6f;text-align:center;">
+            This link is valid for {minutes} minutes.
           </p>
         </td></tr>
         <tr><td style="padding:0 36px 32px 36px;border-top:1px solid #efe7d6;">
