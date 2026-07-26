@@ -103,6 +103,14 @@ export default function ChatWidget() {
     persist(sessions);
   }, [sessions]);
 
+  // Escape collapses the expanded (centered) frame back to the side drawer.
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setExpanded(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
+
   // Push the app content left while the drawer is open.
   useEffect(() => {
     document.body.classList.toggle("coach-open", open);
@@ -461,7 +469,13 @@ export default function ChatWidget() {
       )}
 
       {open && (
-        <div className={`coach-shell ${expanded ? "coach-shell--expanded" : ""}`}>
+        <div
+          className={`coach-shell ${expanded ? "coach-shell--expanded" : ""}`}
+          onClick={(e) => {
+            // Click on the dimmed backdrop (not inside the modal) collapses it.
+            if (expanded && e.target === e.currentTarget) setExpanded(false);
+          }}
+        >
           <div
             className={`coach ${expanded ? "coach--expanded" : ""}`}
             role="dialog"
