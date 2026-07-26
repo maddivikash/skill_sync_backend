@@ -5,6 +5,7 @@ import {
   deletePath,
   deleteStep,
   getSuggestions,
+  listSteps,
 } from "../api/endpoints";
 import { logActivity } from "../lib/activity";
 import { useToast } from "../context/ui";
@@ -47,6 +48,10 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
     Record<number, { kind: "step" | "path"; id: number }>
   >({});
   const pathCache = useRef<Record<string, number>>({});
+  // Names already present in the goal (from earlier visits), so we can show
+  // them as "Added" instead of offering to add duplicates.
+  const [existingStepNames, setExistingStepNames] = useState<Set<string>>(new Set());
+  const [existingPathTitles, setExistingPathTitles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -54,11 +59,33 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
     setIdx(0);
     setAdded({});
     pathCache.current = {};
+
+    // Build the set of already-added item names from the goal's paths/steps.
+    (async () => {
+      const CAT_PLURALS = new Set(["skills", "courses", "tools"]);
+      const stepNames = new Set<string>();
+      const pathTitles = new Set<string>();
+      for (const p of existingPaths) {
+        const title = p.title.trim().toLowerCase();
+        pathTitles.add(title); // projects are stored as paths named after them
+        if (CAT_PLURALS.has(title)) {
+          try {
+            const steps = await listSteps(p.id);
+            steps.forEach((st) => stepNames.add(st.title.trim().toLowerCase()));
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      setExistingStepNames(stepNames);
+      setExistingPathTitles(pathTitles);
+    })();
+
     getSuggestions(role)
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, [open, role]);
+  }, [open, role, existingPaths]);
 
   if (!open) return null;
 
@@ -188,7 +215,13 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
               <p className="muted-note">No suggestions for this category.</p>
             )}
             {items.map((s) => {
-              const isAdded = !!added[s.id];
+              const isSessionAdded = !!added[s.id];
+              const name = s.name.trim().toLowerCase();
+              const preexisting =
+                step.cat === "project"
+                  ? existingPathTitles.has(name)
+                  : existingStepNames.has(name);
+              const isAdded = isSessionAdded || preexisting;
               return (
                 <div key={s.id} className={`suggest-card ${isAdded ? "is-added" : ""}`}>
                   <div className="suggest-card__body">
@@ -213,7 +246,7 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
                       </a>
                     )}
                   </div>
-                  {isAdded ? (
+                  {isSessionAdded ? (
                     <button
                       className="btn btn--sm btn--added"
                       disabled={busy === s.id}
@@ -221,6 +254,10 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
                       title="Remove"
                     >
                       {busy === s.id ? "…" : "✓ Added ✕"}
+                    </button>
+                  ) : preexisting ? (
+                    <button className="btn btn--sm btn--added" disabled title="Already in your goal">
+                      ✓ Added
                     </button>
                   ) : (
                     <button

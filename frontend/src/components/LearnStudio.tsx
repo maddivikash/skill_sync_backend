@@ -41,6 +41,24 @@ interface Props {
 
 type Phase = "mode" | "tasks" | "learning" | "done";
 
+// Persist a learn session per step so reopening resumes the same chat.
+interface SavedSession {
+  mode: LearnMode;
+  phase: Phase;
+  idx: number;
+  queueIds: number[];
+  threads: Record<number, ChatMsg[]>;
+}
+const savedKey = (stepId: number) => `skillsync_learn_${stepId}`;
+function loadSaved(stepId: number): SavedSession | null {
+  try {
+    const raw = localStorage.getItem(savedKey(stepId));
+    return raw ? (JSON.parse(raw) as SavedSession) : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function LearnStudio({
   stepId,
   stepTitle,
@@ -48,18 +66,54 @@ export default function LearnStudio({
   onClose,
 }: Props) {
   const { error } = useToast();
+  const saved = useRef<SavedSession | null>(loadSaved(stepId)).current;
   const [phase, setPhase] = useState<Phase>("mode");
-  const [mode, setMode] = useState<LearnMode>("guided");
+  const [mode, setMode] = useState<LearnMode>(saved?.mode ?? "guided");
   const [plan, setPlan] = useState<LearnPlan | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [queue, setQueue] = useState<LearnTask[]>([]);
   const [idx, setIdx] = useState(0);
-  const [threads, setThreads] = useState<Record<number, ChatMsg[]>>({});
+  const [threads, setThreads] = useState<Record<number, ChatMsg[]>>(
+    saved?.threads ?? {}
+  );
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [planning, setPlanning] = useState(false);
+  const [resuming, setResuming] = useState(!!saved);
   const kicked = useRef<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Resume a saved session: reload the plan, rebuild the queue, jump back in.
+  useEffect(() => {
+    if (!saved) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await learnPlan(stepId);
+        if (cancelled) return;
+        setPlan(p);
+        const byId = new Map(p.tasks.map((t) => [t.id, t]));
+        const q = (saved.queueIds || [])
+          .map((id) => byId.get(id))
+          .filter(Boolean) as LearnTask[];
+        const queue = q.length ? q : p.tasks;
+        setQueue(queue);
+        Object.keys(saved.threads || {}).forEach((id) =>
+          kicked.current.add(Number(id))
+        );
+        setIdx(Math.min(saved.idx ?? 0, Math.max(0, queue.length - 1)));
+        setPhase(saved.phase === "done" ? "done" : "learning");
+      } catch {
+        setResuming(false); // fall back to the mode screen
+      } finally {
+        if (!cancelled) setResuming(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const current = queue[idx];
   const thread = current ? threads[current.id] ?? [] : [];
@@ -77,6 +131,23 @@ export default function LearnStudio({
       behavior: "smooth",
     });
   }, [thread, busy, phase]);
+
+  // Persist the active session so reopening this step resumes the same chat.
+  useEffect(() => {
+    if (phase !== "learning" && phase !== "done") return;
+    try {
+      const payload: SavedSession = {
+        mode,
+        phase,
+        idx,
+        queueIds: queue.map((t) => t.id),
+        threads,
+      };
+      localStorage.setItem(savedKey(stepId), JSON.stringify(payload));
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [phase, idx, queue, threads, mode, stepId]);
 
   // Pick a mode -> generate (or resume) the task list.
   async function chooseMode(m: LearnMode) {
@@ -201,6 +272,11 @@ export default function LearnStudio({
     try {
       await updateStep(stepId, { is_done: true });
       logActivity("complete_step");
+      try {
+        localStorage.removeItem(savedKey(stepId)); // session finished
+      } catch {
+        /* ignore */
+      }
       onChanged();
       window.dispatchEvent(new Event("skillsync:data-changed"));
       onClose();
@@ -231,8 +307,15 @@ export default function LearnStudio({
           </button>
         </header>
 
+        {/* ---- Resuming a saved session ---- */}
+        {phase === "mode" && resuming && (
+          <div className="learn-modal__body">
+            <p className="learn-lead">Picking up where you left off…</p>
+          </div>
+        )}
+
         {/* ---- Phase: choose a mode ---- */}
-        {phase === "mode" && (
+        {phase === "mode" && !resuming && (
           <div className="learn-modal__body learn-modes">
             <p className="learn-lead">
               How would you like to learn this? Pick a style to begin.

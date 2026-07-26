@@ -26,7 +26,8 @@ def _task_counts_by_goal(db: Session, owner_id: int) -> dict:
         )
         .outerjoin(Step, Step.path_id == LearningPath.id)
         .outerjoin(Task, Task.step_id == Step.id)
-        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False))
+        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False),
+                Goal.is_archived.is_(False))
         .group_by(Goal.id)
         .all()
     )
@@ -40,6 +41,7 @@ def _paths_count_by_goal(db: Session, owner_id: int) -> dict:
         .filter(
             Goal.owner_id == owner_id,
             Goal.is_deleted.is_(False),
+            Goal.is_archived.is_(False),
             LearningPath.is_deleted.is_(False),
         )
         .group_by(LearningPath.goal_id)
@@ -51,7 +53,8 @@ def _paths_count_by_goal(db: Session, owner_id: int) -> dict:
 def get_dashboard(db: Session, owner_id: int) -> dict:
     goals = (
         db.query(Goal)
-        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False))
+        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False),
+                Goal.is_archived.is_(False))
         .order_by(Goal.created_at.desc())
         .all()
     )

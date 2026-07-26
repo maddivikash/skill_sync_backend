@@ -123,6 +123,7 @@ select:focus {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 24px;
+  margin-bottom: 20px;
 }
 .settings-card__title { font-size: 1.05rem; margin-bottom: 16px; }
 .settings-card__profile { display: flex; align-items: center; gap: 16px; }
@@ -1443,10 +1444,17 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 }
 .coach__input input { flex: 1; }
 
-/* ---------- Profile chip: never underline on hover ---------- */
+/* ---------- Profile chip: no underline, rounded focus ring ---------- */
 .user-chip,
 .user-chip:hover,
 .user-chip * { text-decoration: none; }
+.user-chip { border-radius: 999px; outline: none; }
+.user-chip:focus { outline: none; }
+.user-chip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 999px;
+}
 
 /* ---------- Learn Studio (guided/interactive tutoring modal) ---------- */
 .learn-here-btn { margin-right: 8px; }
