@@ -498,9 +498,19 @@ export default function LearnStudio({
               <div className="learn-progress__bar">
                 <span style={{ width: `${(idx / queue.length) * 100}%` }} />
               </div>
-              <span className="learn-progress__label">
-                Task {idx + 1} of {queue.length}: <strong>{current.title}</strong>
-              </span>
+              <div className="learn-progress__row">
+                <span className="learn-progress__label">
+                  Task {idx + 1} of {queue.length}:{" "}
+                  <strong>{current.title}</strong>
+                </span>
+                <button
+                  className="learn-next-btn"
+                  onClick={markDoneNext}
+                  disabled={busy}
+                >
+                  {idx + 1 >= queue.length ? "Finish →" : "Next task →"}
+                </button>
+              </div>
             </div>
             <div className="learn-modal__body learn-chat" ref={scrollRef}>
               {thread.map((m, i) => (
@@ -513,16 +523,6 @@ export default function LearnStudio({
                 </div>
               ))}
               {busy && <div className="learn-bubble learn-bubble--assistant">Thinking…</div>}
-              {!busy && thread.some((m) => m.role === "assistant") && (
-                <div className="learn-pills">
-                  <button className="learn-pill learn-pill--primary" onClick={markDoneNext}>
-                    ✓ Mark done {idx + 1 >= queue.length ? "& finish" : "& next"}
-                  </button>
-                  <span className="learn-pills__hint">
-                    or keep chatting to go deeper
-                  </span>
-                </div>
-              )}
             </div>
             <div className="learn-modal__foot">
               <form onSubmit={send} className="learn-input-row">

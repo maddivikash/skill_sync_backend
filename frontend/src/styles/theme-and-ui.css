@@ -1943,3 +1943,30 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 }
 .learn-refine__row input:focus { outline: none; border-color: var(--brand); }
 .learn-refine__note { margin: 10px 0 0; font-size: 0.82rem; color: var(--brand); }
+
+/* ---------- Learn Studio: subtle top "Next task" control ---------- */
+.learn-progress__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.learn-next-btn {
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.learn-next-btn:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.learn-next-btn:disabled { opacity: 0.5; cursor: default; }
