@@ -56,6 +56,39 @@ interface RequestOptions {
   form?: Record<string, string>;
   /** Skip attaching the Bearer token (used for auth endpoints). */
   auth?: boolean;
+  /** Internal: set after we transparently refreshed + retried once. */
+  _retried?: boolean;
+}
+
+// Silently exchange the refresh token for a new access token. Deduped so
+// concurrent 401s trigger only one refresh call.
+let refreshInFlight: Promise<boolean> | null = null;
+function refreshAccessToken(): Promise<boolean> {
+  const rt = localStorage.getItem(REFRESH_KEY);
+  if (!rt) return Promise.resolve(false);
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/api/refresh?refresh_token=${encodeURIComponent(rt)}`,
+          { method: "POST" }
+        );
+        if (!res.ok) return false;
+        const data = await res.json();
+        if (data?.access_token) {
+          localStorage.setItem(ACCESS_KEY, data.access_token);
+          return true;
+        }
+        return false;
+      } catch {
+        return false;
+      }
+    })();
+    refreshInFlight.finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 }
 
 /**
@@ -67,7 +100,7 @@ export async function apiFetch<T>(
   path: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { method = "GET", body, form, auth = true } = options;
+  const { method = "GET", body, form, auth = true, _retried = false } = options;
 
   const headers: Record<string, string> = {};
   let payload: BodyInit | undefined;
@@ -92,6 +125,13 @@ export async function apiFetch<T>(
   });
 
   if (res.status === 401) {
+    // Access token likely expired: try a silent refresh, then retry once.
+    if (auth && !_retried) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return apiFetch<T>(path, { ...options, _retried: true });
+      }
+    }
     onUnauthorized();
     throw new ApiError("Your session has expired. Please sign in again.", 401);
   }

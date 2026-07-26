@@ -1895,3 +1895,8 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 }
 .learn-pill:hover { filter: brightness(1.05); transform: translateY(-1px); }
 .learn-pills__hint { font-size: 0.8rem; color: var(--text-soft); }
+
+/* ---------- Already-signed-in state on the login screen ---------- */
+.auth-card--centered { text-align: center; }
+.auth-card--centered .auth-brand { justify-content: center; }
+.btn--block { width: 100%; margin-top: 20px; }

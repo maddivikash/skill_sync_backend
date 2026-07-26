@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../api/client";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +29,43 @@ export default function Login() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  // Already signed in: don't show the login form again.
+  if (isAuthenticated) {
+    const firstName = user?.full_name?.split(" ")[0];
+    return (
+      <div className="auth-page">
+        <div className="auth-card auth-card--centered">
+          <div className="auth-brand">
+            <span className="brand__mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                <path
+                  d="M4 13l4 4L20 5"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+            <span className="brand__name">
+              As<span className="brand__accent">cend</span>
+            </span>
+          </div>
+          <h1 className="auth-title">
+            You're already signed in{firstName ? `, ${firstName}` : ""}.
+          </h1>
+          <p className="auth-subtitle">Pick up right where you left off.</p>
+          <button
+            className="btn btn--primary btn--block"
+            onClick={() => navigate("/", { replace: true })}
+          >
+            Go to dashboard
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
