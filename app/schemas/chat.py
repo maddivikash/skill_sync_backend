@@ -1,11 +1,18 @@
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, constr, field_validator
 
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: constr(min_length=1, max_length=4000)
+    # Generous cap so pasting a full job description works. Longer text is
+    # truncated (not rejected) so one long message never poisons the history.
+    content: constr(min_length=1)
+
+    @field_validator("content")
+    @classmethod
+    def _cap(cls, v: str) -> str:
+        return v[:12000]
 
 
 class ChatRequest(BaseModel):

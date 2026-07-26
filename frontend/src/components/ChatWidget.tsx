@@ -188,7 +188,11 @@ export default function ChatWidget() {
       title: hadUser ? s.title : text.slice(0, 40),
       updated: Date.now(),
     }));
-    const history = [...active.messages, userMsg].slice(-12);
+    // Keep the last few turns, and clamp each to a sane size so one long
+    // paste (e.g. a full job description) never bloats or breaks the request.
+    const history = [...active.messages, userMsg]
+      .slice(-12)
+      .map((m) => ({ ...m, content: m.content.slice(0, 12000) }));
     setInput("");
     setBusy(true);
     try {
