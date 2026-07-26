@@ -22,6 +22,7 @@ export interface Goal {
   hours_per_week: number;
   duration_weeks: number;
   is_active: boolean;
+  is_archived?: boolean;
   created_at: string;
 }
 

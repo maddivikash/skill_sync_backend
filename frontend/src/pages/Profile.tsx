@@ -1,6 +1,12 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { changePassword, resetProgress } from "../api/endpoints";
+import {
+  changePassword,
+  listArchivedGoals,
+  resetProgress,
+  setGoalArchived,
+} from "../api/endpoints";
+import type { Goal } from "../types";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/theme";
 import { useConfirm, useToast } from "../context/ui";
@@ -18,6 +24,27 @@ export default function Profile() {
   const [confirmPw, setConfirmPw] = useState("");
   const [savingPw, setSavingPw] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [archived, setArchived] = useState<Goal[]>([]);
+  const [unarchivingId, setUnarchivingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    listArchivedGoals()
+      .then(setArchived)
+      .catch(() => setArchived([]));
+  }, []);
+
+  async function handleUnarchive(id: number, roleName: string) {
+    setUnarchivingId(id);
+    try {
+      await setGoalArchived(id, false);
+      setArchived((prev) => prev.filter((g) => g.id !== id));
+      success(`"${roleName}" is back on your dashboard.`);
+    } catch (err) {
+      error(err instanceof Error ? err.message : "Failed to unarchive goal.");
+    } finally {
+      setUnarchivingId(null);
+    }
+  }
 
   const initials = user?.full_name
     ? user.full_name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()
@@ -163,6 +190,37 @@ export default function Profile() {
             </button>
           </div>
         </form>
+      </section>
+
+      {/* Archived goals */}
+      <section className="settings-card">
+        <h2 className="settings-card__title">Archived goals</h2>
+        {archived.length === 0 ? (
+          <p className="muted-note">
+            No archived goals. Archive a goal from its menu on the dashboard to
+            tuck it away without deleting it.
+          </p>
+        ) : (
+          <ul className="archived-list">
+            {archived.map((g) => (
+              <li key={g.id} className="archived-item">
+                <div>
+                  <div className="settings-row__label">{g.role}</div>
+                  <div className="muted-note">
+                    {g.hours_per_week} hrs/week · {g.duration_weeks} weeks
+                  </div>
+                </div>
+                <button
+                  className="btn btn--soft btn--sm"
+                  onClick={() => handleUnarchive(g.id, g.role)}
+                  disabled={unarchivingId === g.id}
+                >
+                  {unarchivingId === g.id ? "Restoring…" : "Unarchive"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* Danger zone */}

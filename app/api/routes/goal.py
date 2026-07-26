@@ -20,6 +20,11 @@ def list_goals(db: Session = Depends(get_db), current_user: User = Depends(get_c
     return goal_service.get_all_goals(db, owner_id=current_user.id)
 
 
+@router.get("/archived", response_model=list[GoalOut])
+def list_archived_goals(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return goal_service.get_archived_goals(db, owner_id=current_user.id)
+
+
 @router.get("/{goal_id}", response_model=GoalOut)
 def get_goal(goal_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return goal_service.get_goal(db, goal_id, owner_id=current_user.id)

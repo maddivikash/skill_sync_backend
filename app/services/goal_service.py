@@ -19,9 +19,21 @@ def get_goal(db: Session, goal_id: int, owner_id: int) -> Goal:
 
 
 def get_all_goals(db: Session, owner_id: int):
+    """Active (non-archived) goals for the main views."""
     return (
         db.query(Goal)
-        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False))
+        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False),
+                Goal.is_archived.is_(False))
+        .order_by(Goal.created_at.desc())
+        .all()
+    )
+
+
+def get_archived_goals(db: Session, owner_id: int):
+    return (
+        db.query(Goal)
+        .filter(Goal.owner_id == owner_id, Goal.is_deleted.is_(False),
+                Goal.is_archived.is_(True))
         .order_by(Goal.created_at.desc())
         .all()
     )

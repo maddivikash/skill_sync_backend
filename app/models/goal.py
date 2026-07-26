@@ -15,6 +15,7 @@ class Goal(Base):
     hours_per_week = Column(Integer, nullable=False)
     duration_weeks = Column(Integer, nullable=False)
     is_active      = Column(Boolean, default=True)
+    is_archived    = Column(Boolean, default=False, index=True)
     is_deleted     = Column(Boolean, default=False, index=True)
     created_at     = Column(DateTime, default=datetime.utcnow)
 

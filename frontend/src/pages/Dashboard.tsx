@@ -6,6 +6,7 @@ import {
   getDashboard,
   listRoles,
   resetGoal,
+  setGoalArchived,
 } from "../api/endpoints";
 import type { CatalogRole, Dashboard as DashboardData } from "../types";
 import ProgressRing from "../components/ProgressRing";
@@ -119,6 +120,20 @@ export default function Dashboard() {
       await load();
     } catch (err) {
       toastError(err instanceof Error ? err.message : "Failed to delete goal.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleArchive(id: number, roleName: string) {
+    setMenuOpenId(null);
+    setBusyId(id);
+    try {
+      await setGoalArchived(id, true);
+      success(`"${roleName}" archived. Unarchive it anytime from Settings.`);
+      await load();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Failed to archive goal.");
     } finally {
       setBusyId(null);
     }
@@ -271,6 +286,13 @@ export default function Dashboard() {
                         </button>
                         {menuOpenId === goal.id && (
                           <div className="kebab__menu" role="menu">
+                            <button
+                              className="kebab__item"
+                              role="menuitem"
+                              onClick={() => handleArchive(goal.id, goal.role)}
+                            >
+                              📥 Archive goal
+                            </button>
                             <button
                               className="kebab__item"
                               role="menuitem"

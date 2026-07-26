@@ -172,6 +172,20 @@ export function deleteGoal(goalId: number): Promise<void> {
   return apiFetch<void>(`/goals/${goalId}`, { method: "DELETE" });
 }
 
+export function listArchivedGoals(): Promise<Goal[]> {
+  return apiFetch<Goal[]>("/goals/archived");
+}
+
+export function setGoalArchived(
+  goalId: number,
+  archived: boolean
+): Promise<Goal> {
+  return apiFetch<Goal>(`/goals/${goalId}`, {
+    method: "PUT",
+    body: { is_archived: archived },
+  });
+}
+
 export function resetGoal(goalId: number): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/goals/${goalId}/reset`, { method: "POST" });
 }

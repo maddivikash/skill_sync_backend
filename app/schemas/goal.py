@@ -15,6 +15,7 @@ class GoalUpdate(BaseModel):
     hours_per_week: Optional[int] = Field(None, gt=0, le=168)
     duration_weeks: Optional[int] = Field(None, gt=0, le=520)
     is_active: Optional[bool] = None
+    is_archived: Optional[bool] = None
 
 
 class GoalOut(BaseModel):
@@ -23,6 +24,7 @@ class GoalOut(BaseModel):
     hours_per_week: int
     duration_weeks: int
     is_active: bool
+    is_archived: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
