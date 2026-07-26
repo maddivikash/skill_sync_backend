@@ -1900,3 +1900,46 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .auth-card--centered { text-align: center; }
 .auth-card--centered .auth-brand { justify-content: center; }
 .btn--block { width: 100%; margin-top: 20px; }
+
+/* ---------- Learn Studio: free-flow plan refinement ---------- */
+.learn-task-picker.is-refining { opacity: 0.55; pointer-events: none; }
+.learn-refine {
+  margin: 16px 0 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.learn-refine__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.learn-refine__chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.learn-refine__chip:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.learn-refine__chip:disabled { opacity: 0.5; cursor: default; }
+.learn-refine__row { display: flex; gap: 8px; }
+.learn-refine__row input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.learn-refine__row input:focus { outline: none; border-color: var(--brand); }
+.learn-refine__note { margin: 10px 0 0; font-size: 0.82rem; color: var(--brand); }

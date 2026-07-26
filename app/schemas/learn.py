@@ -13,6 +13,11 @@ class LearnPlanRequest(BaseModel):
     step_id: int
 
 
+class LearnReplanRequest(BaseModel):
+    step_id: int
+    instruction: constr(min_length=1, max_length=500)
+
+
 class LearnPlanReply(BaseModel):
     step_title: str
     category: str  # singular: skill / course / tool / project / topic

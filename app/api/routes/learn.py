@@ -23,6 +23,7 @@ from app.models.user import User
 from app.schemas.learn import (
     LearnPlanReply,
     LearnPlanRequest,
+    LearnReplanRequest,
     LearnTurnReply,
     LearnTurnRequest,
 )
@@ -99,6 +100,67 @@ def make_plan(req: LearnPlanRequest, db: Session = Depends(get_db),
         step_title=step.title, category=category, role=goal.role,
         tasks=[{"id": t.id, "title": t.title, "is_done": t.is_done} for t in tasks],
     )
+
+
+@router.post("/replan", response_model=LearnPlanReply)
+def replan(req: LearnReplanRequest, db: Session = Depends(get_db),
+           current_user: User = Depends(get_current_user)):
+    """Reshape the task list from a free-text instruction (add/remove/regenerate/
+    focus), keeping it structured. Preserves done state on kept tasks."""
+    row = _owned_step(db, current_user.id, req.step_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="Step not found")
+    step, path, goal = row
+    category = _category(path.title)
+
+    current = [t.title for t in step.tasks]
+    prompt = (
+        f"A learner is shaping a task list for the {category} \"{step.title}\" "
+        f"(toward becoming a {goal.role}). Current tasks: {current}. "
+        f"Apply this request: \"{req.instruction}\". Return the FULL revised, "
+        f"ordered list of 3 to 8 short task titles (max 8 words each, no "
+        f"numbering). Keep the good existing tasks unless the request removes "
+        f'them. Respond as JSON: {{"tasks": ["...", "..."]}}'
+    )
+    try:
+        raw = groq_client.complete(
+            [{"role": "system", "content":
+              "You revise short, practical learning task lists. Output JSON only."},
+             {"role": "user", "content": prompt}],
+            temperature=0.5, max_tokens=500,
+            response_format={"type": "json_object"},
+        )
+        titles = json.loads(raw).get("tasks", [])
+    except Exception:
+        logger.exception("learn replan failed")
+        raise HTTPException(status_code=503,
+                            detail="Couldn't update the plan just now. Please try again.")
+    titles = [str(t).strip()[:255] for t in titles if str(t).strip()][:8]
+    if not titles:
+        raise HTTPException(status_code=503, detail="Couldn't update the plan.")
+
+    # Reconcile: keep matches (preserve done), delete removed, add new.
+    by_lower = {t.title.strip().lower(): t for t in step.tasks}
+    new_lower = {t.lower() for t in titles}
+    for t in list(step.tasks):
+        if t.title.strip().lower() not in new_lower:
+            db.delete(t)
+    for title in titles:
+        if title.lower() not in by_lower:
+            new_task = Task(step_id=step.id, title=title)
+            db.add(new_task)
+            by_lower[title.lower()] = new_task
+    db.commit()
+
+    # Return in the instruction's order.
+    ordered = []
+    for title in titles:
+        t = by_lower.get(title.lower())
+        if t:
+            db.refresh(t)
+            ordered.append({"id": t.id, "title": t.title, "is_done": t.is_done})
+    return LearnPlanReply(step_title=step.title, category=category,
+                          role=goal.role, tasks=ordered)
 
 
 @router.post("/turn", response_model=LearnTurnReply)

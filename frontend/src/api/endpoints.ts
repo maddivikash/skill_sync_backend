@@ -107,6 +107,16 @@ export function learnPlan(stepId: number): Promise<LearnPlan> {
   });
 }
 
+export function learnReplan(
+  stepId: number,
+  instruction: string
+): Promise<LearnPlan> {
+  return apiFetch<LearnPlan>("/learn/replan", {
+    method: "POST",
+    body: { step_id: stepId, instruction },
+  });
+}
+
 export function learnTurn(payload: {
   step_id: number;
   task_id: number;

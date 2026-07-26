@@ -7,6 +7,7 @@ import {
 } from "react";
 import {
   learnPlan,
+  learnReplan,
   learnTurn,
   updateStep,
   updateTask,
@@ -80,6 +81,9 @@ export default function LearnStudio({
   const [busy, setBusy] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [resuming, setResuming] = useState(!!saved);
+  const [refine, setRefine] = useState("");
+  const [refining, setRefining] = useState(false);
+  const [refineNote, setRefineNote] = useState<string | null>(null);
   const kicked = useRef<Set<number>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -180,6 +184,28 @@ export default function LearnStudio({
     setQueue(chosen);
     setIdx(0);
     setPhase("learning");
+  }
+
+  // Free-flow: reshape the plan from a typed instruction, keep it structured.
+  async function handleRefine(e: FormEvent) {
+    e.preventDefault();
+    const instruction = refine.trim();
+    if (!instruction || refining) return;
+    setRefining(true);
+    setRefineNote(null);
+    try {
+      const p = await learnReplan(stepId, instruction);
+      setPlan(p);
+      setSelected(new Set(p.tasks.filter((t) => !t.is_done).map((t) => t.id)));
+      setRefine("");
+      setRefineNote("Updated the plan below.");
+    } catch (err) {
+      setRefineNote(
+        err instanceof Error ? err.message : "Couldn't update the plan."
+      );
+    } finally {
+      setRefining(false);
+    }
   }
 
   // First lesson for a task, fetched once when it becomes current.
@@ -387,14 +413,14 @@ export default function LearnStudio({
           </div>
         )}
 
-        {/* ---- Phase: pick tasks ---- */}
+        {/* ---- Phase: pick tasks (structured, but shapeable by chat) ---- */}
         {phase === "tasks" && plan && (
           <div className="learn-modal__body">
             <p className="learn-lead">
               Here's a plan for <strong>{stepTitle}</strong>. Pick what you want
-              to work through, then start.
+              to work through, or tell me how to change it.
             </p>
-            <ul className="learn-task-picker">
+            <ul className={`learn-task-picker ${refining ? "is-refining" : ""}`}>
               {plan.tasks.map((t) => (
                 <li key={t.id}>
                   <label className={t.is_done ? "is-done" : ""}>
@@ -409,6 +435,47 @@ export default function LearnStudio({
                 </li>
               ))}
             </ul>
+
+            {/* free-flow refinement: quick chips + type your own */}
+            <div className="learn-refine">
+              <div className="learn-refine__chips">
+                {[
+                  "Regenerate the plan",
+                  "Make it shorter",
+                  "Add a hands-on project",
+                  "Go more advanced",
+                ].map((q) => (
+                  <button
+                    key={q}
+                    className="learn-refine__chip"
+                    disabled={refining}
+                    onClick={() => {
+                      setRefine(q);
+                      handleRefine({ preventDefault() {} } as FormEvent);
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <form onSubmit={handleRefine} className="learn-refine__row">
+                <input
+                  value={refine}
+                  onChange={(e) => setRefine(e.target.value)}
+                  placeholder="e.g. add a topic on jet engines, focus on exams…"
+                  disabled={refining}
+                />
+                <button
+                  type="submit"
+                  className="btn btn--soft btn--sm"
+                  disabled={refining || !refine.trim()}
+                >
+                  {refining ? "Updating…" : "Update plan"}
+                </button>
+              </form>
+              {refineNote && <p className="learn-refine__note">{refineNote}</p>}
+            </div>
+
             <div className="learn-modal__actions">
               <button className="btn btn--ghost btn--sm" onClick={() => setPhase("mode")}>
                 Back
