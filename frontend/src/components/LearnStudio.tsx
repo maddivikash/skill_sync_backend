@@ -332,9 +332,16 @@ export default function LearnStudio({
         {/* ---- Phase: choose a mode ---- */}
         {phase === "mode" && !resuming && (
           <div className="learn-modal__body learn-modes">
-            <p className="learn-lead">
-              How would you like to learn this? Pick a style to begin.
-            </p>
+            <div className="learn-modes__intro">
+              <h3 className="learn-modes__title">
+                How would you like to learn <em>{stepTitle}</em>?
+              </h3>
+              <p className="learn-lead">
+                Pick a style and the coach builds a task plan, then walks you
+                through it one step at a time.
+              </p>
+            </div>
+
             <div className="learn-mode-grid">
               <button
                 className="learn-mode-card"
@@ -347,6 +354,7 @@ export default function LearnStudio({
                   The coach explains each task with an example. You read, ask
                   follow ups, then move on. Calm and steady.
                 </span>
+                <span className="learn-mode-card__cta">Start guided →</span>
               </button>
               <button
                 className="learn-mode-card"
@@ -359,9 +367,23 @@ export default function LearnStudio({
                   The coach teaches, then quizzes you and checks your answers
                   before moving on. More hands on.
                 </span>
+                <span className="learn-mode-card__cta">Start interactive →</span>
               </button>
             </div>
-            {planning && <p className="learn-lead">Building your task list…</p>}
+
+            {planning ? (
+              <p className="learn-modes__building">
+                <span className="learn-spinner" aria-hidden="true" /> Building
+                your task list…
+              </p>
+            ) : (
+              <ol className="learn-steps" aria-label="How it works">
+                <li><span>1</span> Pick a style</li>
+                <li><span>2</span> Coach builds your tasks</li>
+                <li><span>3</span> Learn one task at a time</li>
+                <li><span>4</span> Mark it complete</li>
+              </ol>
+            )}
           </div>
         )}
 
