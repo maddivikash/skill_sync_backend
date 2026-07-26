@@ -86,6 +86,36 @@ export function sendChat(
   });
 }
 
+// ---- Learn Studio (guided/interactive tutoring) ----
+export interface LearnTask {
+  id: number;
+  title: string;
+  is_done: boolean;
+}
+export interface LearnPlan {
+  step_title: string;
+  category: string; // skill / course / tool / project / topic
+  role: string;
+  tasks: LearnTask[];
+}
+export type LearnMode = "guided" | "interactive";
+
+export function learnPlan(stepId: number): Promise<LearnPlan> {
+  return apiFetch<LearnPlan>("/learn/plan", {
+    method: "POST",
+    body: { step_id: stepId },
+  });
+}
+
+export function learnTurn(payload: {
+  step_id: number;
+  task_id: number;
+  mode: LearnMode;
+  messages: ChatMsg[];
+}): Promise<{ reply: string }> {
+  return apiFetch("/learn/turn", { method: "POST", body: payload });
+}
+
 export function getMe(): Promise<User> {
   return apiFetch<User>("/api/users/me");
 }

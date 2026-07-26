@@ -9,6 +9,7 @@ import { logActivity } from "../lib/activity";
 import { useConfirm, useToast } from "../context/ui";
 import type { Step, Task } from "../types";
 import TaskRow from "./TaskRow";
+import LearnStudio from "./LearnStudio";
 
 // Render any URL in a description as a clickable link (e.g. course links).
 function linkifyDesc(text: string) {
@@ -52,6 +53,7 @@ export default function StepItem({ step, onChanged }: Props) {
   const [adding, setAdding] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [learning, setLearning] = useState(false);
 
   const loadTasks = useCallback(async () => {
     try {
@@ -172,6 +174,13 @@ export default function StepItem({ step, onChanged }: Props) {
             </ul>
           )}
 
+          <button
+            className="btn btn--primary btn--sm learn-here-btn"
+            onClick={() => setLearning(true)}
+          >
+            ✨ Learn here
+          </button>
+
           {showTaskForm ? (
             <form onSubmit={addTask} className="inline-form">
               <input
@@ -208,6 +217,15 @@ export default function StepItem({ step, onChanged }: Props) {
             </button>
           )}
         </div>
+      )}
+
+      {learning && (
+        <LearnStudio
+          stepId={step.id}
+          stepTitle={step.title}
+          onChanged={refresh}
+          onClose={() => setLearning(false)}
+        />
       )}
     </div>
   );
