@@ -9,3 +9,4 @@ class User(Base):
     email = Column(String(255), unique=True, index=True)
     hashed_password = Column(String(255))
     is_active = Column(Boolean, default=True)
+    email_reminders = Column(Boolean, default=True)  # daily due-task emails

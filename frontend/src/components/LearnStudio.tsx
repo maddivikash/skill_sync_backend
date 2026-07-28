@@ -503,13 +503,24 @@ export default function LearnStudio({
                   Task {idx + 1} of {queue.length}:{" "}
                   <strong>{current.title}</strong>
                 </span>
-                <button
-                  className="learn-next-btn"
-                  onClick={markDoneNext}
-                  disabled={busy}
-                >
-                  {idx + 1 >= queue.length ? "Finish →" : "Next task →"}
-                </button>
+                <div className="learn-progress__nav">
+                  {idx > 0 && (
+                    <button
+                      className="learn-next-btn"
+                      onClick={() => setIdx((i) => Math.max(0, i - 1))}
+                      disabled={busy}
+                    >
+                      ← Prev
+                    </button>
+                  )}
+                  <button
+                    className="learn-next-btn"
+                    onClick={markDoneNext}
+                    disabled={busy}
+                  >
+                    {idx + 1 >= queue.length ? "Finish →" : "Next task →"}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="learn-modal__body learn-chat" ref={scrollRef}>

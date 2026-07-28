@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel
@@ -25,6 +25,7 @@ class StepOut(StepBase):
     id: int
     path_id: int
     is_done: bool
+    due_date: Optional[date] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

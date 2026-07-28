@@ -3,6 +3,7 @@ import {
   createPath,
   createStep,
   listPaths,
+  scheduleGoal,
   sendChat,
   type ChatMsg,
   type ChatSuggestion,
@@ -161,6 +162,12 @@ export default function ChatWidget() {
     if (catIndex + 1 >= present.length) {
       setSuggestions([]);
       setCatIndex(0);
+      // Flow complete: assign weighted deadlines to the goal that was built.
+      if (suggestGoalId) {
+        scheduleGoal(suggestGoalId)
+          .then(() => window.dispatchEvent(new Event("skillsync:data-changed")))
+          .catch(() => {});
+      }
       updateActive((s) => ({
         ...s,
         messages: [

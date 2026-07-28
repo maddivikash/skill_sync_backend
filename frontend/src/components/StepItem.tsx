@@ -142,6 +142,18 @@ export default function StepItem({ step, onChanged }: Props) {
           </span>
           <span className="step__title">{step.title}</span>
         </button>
+        {step.due_date && !step.is_done && (() => {
+          const due = new Date(step.due_date + "T00:00:00");
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const overdue = due < today;
+          const label = due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+          return (
+            <span className={`task-row__due ${overdue ? "is-overdue" : ""}`}>
+              {overdue ? `was due ${label}` : `due ${label}`}
+            </span>
+          );
+        })()}
         <span className="step__count">
           {doneCount}/{tasks.length}
         </span>

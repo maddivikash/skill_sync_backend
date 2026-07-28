@@ -92,11 +92,19 @@ def _match_role(db: Session, role_text: str) -> CatalogRole | None:
         rn = r.name.lower()
         if q in rn or rn in q:
             return r
-    # 3) keyword overlap (any significant word in common)
-    words = {w for w in q.replace("/", " ").split() if len(w) > 2}
+    # 3) keyword overlap, but ONLY on distinctive words. Generic job words
+    # must not match ("Python Developer" is NOT "Web Developer" just because
+    # both say "developer" — that produced web suggestions for a Python role).
+    GENERIC = {"developer", "engineer", "engineering", "manager", "specialist",
+               "analyst", "senior", "junior", "lead", "associate", "consultant",
+               "expert", "intern", "professional", "architect"}
+    words = {w for w in q.replace("/", " ").split() if len(w) > 2} - GENERIC
+    if not words:
+        return None
     best, best_score = None, 0
     for r in roles:
-        rwords = {w for w in r.name.lower().replace("/", " ").split() if len(w) > 2}
+        rwords = ({w for w in r.name.lower().replace("/", " ").split() if len(w) > 2}
+                  - GENERIC)
         score = len(words & rwords)
         if score > best_score:
             best, best_score = r, score

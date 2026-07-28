@@ -5,7 +5,7 @@ from app.core.deps import get_current_user
 from app.db.deps import get_db
 from app.models.user import User
 from app.schemas.goal import GoalCreate, GoalOut, GoalUpdate
-from app.services import goal_service
+from app.services import goal_service, schedule_service
 
 router = APIRouter(prefix="/goals", tags=["Goals"])
 
@@ -44,3 +44,12 @@ def delete_goal(goal_id: int, db: Session = Depends(get_db), current_user: User 
 def reset_goal(goal_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     removed = goal_service.reset_goal(db, goal_id, owner_id=current_user.id)
     return {"message": f"Removed {removed} paths and all their content."}
+
+
+@router.post("/{goal_id}/schedule", response_model=dict)
+def schedule_goal(goal_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Assign weighted deadlines to the goal's steps (courses/projects get
+    more time than skills/tools), spread over the goal's duration."""
+    goal = goal_service.get_goal(db, goal_id, owner_id=current_user.id)
+    count = schedule_service.schedule_goal(db, goal)
+    return {"scheduled": count}

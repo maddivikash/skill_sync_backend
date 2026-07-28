@@ -1,5 +1,6 @@
 import { API_URL, apiFetch, getAccessToken, setTokens } from "./client";
 import type {
+  AppNotification,
   CatalogRole,
   Dashboard,
   Goal,
@@ -241,6 +242,27 @@ export function setGoalArchived(
 
 export function resetGoal(goalId: number): Promise<{ message: string }> {
   return apiFetch<{ message: string }>(`/goals/${goalId}/reset`, { method: "POST" });
+}
+
+export function scheduleGoal(goalId: number): Promise<{ scheduled: number }> {
+  return apiFetch<{ scheduled: number }>(`/goals/${goalId}/schedule`, {
+    method: "POST",
+  });
+}
+
+// ---- Notifications (due today / overdue) ----
+export function getNotifications(): Promise<{
+  items: AppNotification[];
+  count: number;
+}> {
+  return apiFetch("/notifications/");
+}
+
+export function updatePreferences(emailReminders: boolean): Promise<User> {
+  return apiFetch<User>("/api/users/me/preferences", {
+    method: "PUT",
+    body: { email_reminders: emailReminders },
+  });
 }
 
 // ---- Paths ----

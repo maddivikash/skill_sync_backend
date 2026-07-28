@@ -4,6 +4,7 @@ import {
   createPath,
   getGoal,
   listPaths,
+  scheduleGoal,
 } from "../api/endpoints";
 import type { Goal, LearningPath } from "../types";
 import PathSection from "../components/PathSection";
@@ -168,8 +169,15 @@ export default function GoalDetail() {
           goalId={goalId}
           role={goal.role}
           existingPaths={paths}
-          onClose={() => {
+          onClose={async () => {
             setShowWizard(false);
+            // Weighted deadlines: courses/projects get more time than
+            // skills/tools, spread over the goal's duration.
+            try {
+              await scheduleGoal(goalId);
+            } catch {
+              /* non-fatal */
+            }
             loadPaths();
             setPathsVersion((v) => v + 1);
           }}

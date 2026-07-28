@@ -9,9 +9,14 @@ class UserCreate(UserBase):
 
 class UserOut(UserBase):
     id: int
+    email_reminders: bool = True
 
     class Config:
         from_attributes = True
+
+
+class PreferencesUpdate(BaseModel):
+    email_reminders: bool
 
 
 class PasswordChange(BaseModel):

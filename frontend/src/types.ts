@@ -2,6 +2,16 @@ export interface User {
   id: number;
   email: string;
   full_name: string;
+  email_reminders?: boolean;
+}
+
+export interface AppNotification {
+  kind: "step" | "task";
+  title: string;
+  goal_id: number;
+  goal_role: string;
+  due_date: string;
+  overdue: boolean;
 }
 
 export interface TokenPair {
@@ -52,6 +62,7 @@ export interface Step {
   description: string | null;
   step_order: number;
   is_done: boolean;
+  due_date?: string | null;
   created_at: string;
 }
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -15,6 +15,7 @@ class Step(Base):
     description = Column(Text, nullable=True)
     step_order  = Column(Integer, default=0)   # `order` is reserved in SQL
     is_done     = Column(Boolean, default=False)
+    due_date    = Column(Date, nullable=True)  # weighted deadline (auto-scheduled)
     created_at  = Column(DateTime, default=datetime.utcnow)
 
     path  = relationship("LearningPath", back_populates="steps")

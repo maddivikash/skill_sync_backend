@@ -2,9 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   changePassword,
+  getMe,
   listArchivedGoals,
   resetProgress,
   setGoalArchived,
+  updatePreferences,
 } from "../api/endpoints";
 import type { Goal } from "../types";
 import { useAuth } from "../context/AuthContext";
@@ -26,12 +28,31 @@ export default function Profile() {
   const [resetting, setResetting] = useState(false);
   const [archived, setArchived] = useState<Goal[]>([]);
   const [unarchivingId, setUnarchivingId] = useState<number | null>(null);
+  const [emailReminders, setEmailReminders] = useState(true);
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   useEffect(() => {
     listArchivedGoals()
       .then(setArchived)
       .catch(() => setArchived([]));
+    getMe()
+      .then((u) => setEmailReminders(u.email_reminders ?? true))
+      .catch(() => {});
   }, []);
+
+  async function toggleEmailReminders() {
+    const next = !emailReminders;
+    setSavingPrefs(true);
+    try {
+      await updatePreferences(next);
+      setEmailReminders(next);
+      success(next ? "Daily email reminders on." : "Daily email reminders off.");
+    } catch (err) {
+      error(err instanceof Error ? err.message : "Couldn't save that.");
+    } finally {
+      setSavingPrefs(false);
+    }
+  }
 
   async function handleUnarchive(id: number, roleName: string) {
     setUnarchivingId(id);
@@ -127,6 +148,21 @@ export default function Profile() {
       <section className="settings-card">
         <h2 className="settings-card__title">Preferences</h2>
         <div className="settings-row">
+          <div>
+            <div className="settings-row__label">Daily email reminders</div>
+            <div className="muted-note">
+              One morning email with your due and overdue items. On by default.
+            </div>
+          </div>
+          <button
+            className={`theme-choice__btn ${emailReminders ? "is-active" : ""}`}
+            onClick={toggleEmailReminders}
+            disabled={savingPrefs}
+          >
+            {emailReminders ? "✓ On" : "Off"}
+          </button>
+        </div>
+        <div className="settings-row" style={{ marginTop: 16 }}>
           <div>
             <div className="settings-row__label">Appearance</div>
             <div className="muted-note">Choose light or dark mode.</div>

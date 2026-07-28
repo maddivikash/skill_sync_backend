@@ -2,6 +2,7 @@ import { Link, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/theme";
 import ChatWidget from "./ChatWidget";
+import NotificationsBell from "./NotificationsBell";
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -43,6 +44,7 @@ export default function Layout() {
             </span>
           </Link>
           <div className="app-header__right">
+            {user && <NotificationsBell />}
             <button
               className="theme-toggle"
               onClick={toggle}

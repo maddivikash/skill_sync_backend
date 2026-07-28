@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.schemas.user import (
     PasswordChange,
+    PreferencesUpdate,
     PasswordResetConfirm,
     PasswordResetRequest,
     UserCreate,
@@ -88,6 +89,18 @@ def confirm_password_reset(payload: PasswordResetConfirm, db: Session = Depends(
 
 @router.get("/users/me", response_model=UserOut)
 def get_current_logged_in_user(current_user=Depends(get_current_user)):
+    return current_user
+
+
+@router.put("/users/me/preferences", response_model=UserOut)
+def update_preferences(
+    payload: PreferencesUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    current_user.email_reminders = payload.email_reminders
+    db.commit()
+    db.refresh(current_user)
     return current_user
 
 

@@ -172,6 +172,21 @@ def analyze(req: PrepRequest, db: Session = Depends(get_db),
 
     today = date.today()
     total_tasks = 0
+
+    # Strengths appear as an "Already covered" path with pre-completed steps:
+    # starting at visible progress beats starting at zero. These carry no
+    # tasks, so they don't inflate the readiness/progress math.
+    strengths = [str(x).strip()[:120] for x in (data.get("strengths") or [])[:6]]
+    if strengths:
+        covered = LearningPath(goal_id=goal.id, title="Already covered",
+                               description="Requirements you already meet")
+        db.add(covered)
+        db.flush()
+        for order, s_title in enumerate(strengths, start=1):
+            db.add(Step(path_id=covered.id, title=s_title[:255],
+                        description="Matched from your existing goals",
+                        step_order=order, is_done=True))
+
     for p in plan[:4]:
         path = LearningPath(goal_id=goal.id,
                             title=str(p.get("path") or "Plan").strip()[:120])
@@ -203,7 +218,7 @@ def analyze(req: PrepRequest, db: Session = Depends(get_db),
         goal_id=goal.id, role=role,
         summary=str(data.get("summary") or "").strip()[:500],
         readiness=readiness,
-        strengths=[str(x).strip()[:120] for x in (data.get("strengths") or [])[:8]],
+        strengths=strengths,
         gaps=[str(x).strip()[:120] for x in (data.get("gaps") or [])[:8]],
         total_tasks=total_tasks,
     )

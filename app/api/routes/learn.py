@@ -27,7 +27,7 @@ from app.schemas.learn import (
     LearnTurnReply,
     LearnTurnRequest,
 )
-from app.services import groq_client
+from app.services import groq_client, schedule_service
 
 router = APIRouter(prefix="/learn", tags=["Learn"])
 logger = logging.getLogger("skillsync.learn")
@@ -94,6 +94,10 @@ def make_plan(req: LearnPlanRequest, db: Session = Depends(get_db),
             db.add(Task(step_id=step.id, title=t))
         db.commit()
         db.refresh(step)
+        # If this goal runs on deadlines, the fresh tasks get dates too.
+        if goal.readiness_base is not None or step.due_date is not None:
+            schedule_service.date_new_tasks(db, goal, step)
+            db.refresh(step)
         tasks = step.tasks
 
     return LearnPlanReply(
@@ -151,6 +155,10 @@ def replan(req: LearnReplanRequest, db: Session = Depends(get_db),
             db.add(new_task)
             by_lower[title.lower()] = new_task
     db.commit()
+    db.refresh(step)
+    # Regenerated tasks inherit the plan's deadlines (spread over what's left).
+    if goal.readiness_base is not None or step.due_date is not None:
+        schedule_service.date_new_tasks(db, goal, step)
 
     # Return in the instruction's order.
     ordered = []
