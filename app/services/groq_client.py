@@ -27,18 +27,20 @@ def _ordered_keys():
     return keys[start:] + keys[:start]
 
 
-def complete(messages, *, temperature=0.4, max_tokens=900, response_format=None):
+def complete(messages, *, temperature=0.4, max_tokens=900, response_format=None,
+             model=None):
     """Call Groq chat-completions and return the assistant's text content.
 
     Rotates keys, and on rate limits waits and retries a few rounds before
     giving up. Raises RuntimeError if no key is configured or all attempts fail.
+    `model` overrides the default (e.g. a vision model for image extraction).
     """
     keys = _ordered_keys()
     if not keys:
         raise RuntimeError("no Groq API key configured")
 
     payload = {
-        "model": settings.GROQ_MODEL,
+        "model": model or settings.GROQ_MODEL,
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,

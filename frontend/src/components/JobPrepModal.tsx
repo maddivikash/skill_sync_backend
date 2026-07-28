@@ -92,7 +92,7 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
             <input
               ref={fileRef}
               type="file"
-              accept=".pdf,.txt,.md"
+              accept=".pdf,.txt,.md,.png,.jpg,.jpeg,.webp"
               onChange={handleFile}
               hidden
             />
@@ -102,7 +102,7 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
               onClick={() => fileRef.current?.click()}
               disabled={busy || extracting}
             >
-              {extracting ? "Reading file…" : "📎 Attach a file (PDF or TXT)"}
+              {extracting ? "Reading file…" : "📎 Attach a file (PDF, image, or TXT)"}
             </button>
             {attachedName && !extracting && (
               <span className="prep-form__attached">

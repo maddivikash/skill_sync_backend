@@ -38,20 +38,43 @@ def _skill_inventory(db: Session, uid: int) -> list:
     return sorted({r[0] for r in rows})
 
 
-MAX_UPLOAD = 5 * 1024 * 1024  # 5 MB
+MAX_UPLOAD = 5 * 1024 * 1024   # 5 MB (pdf/text)
+MAX_IMAGE = 3 * 1024 * 1024    # 3 MB (images)
+# Bedrock Nova Lite reads JD screenshots/photos. Auth comes from the EC2
+# instance role (no keys in env); costs fractions of a cent per image.
+VISION_MODEL = "amazon.nova-lite-v1:0"
+IMAGE_FORMATS = {".png": "png", ".jpg": "jpeg", ".jpeg": "jpeg", ".webp": "webp"}
+
+
+def _image_text(data: bytes, fmt: str) -> str:
+    """Read a JD screenshot/photo with Bedrock's vision model."""
+    import boto3
+    client = boto3.client("bedrock-runtime", region_name="us-east-1")
+    resp = client.converse(
+        modelId=VISION_MODEL,
+        messages=[{"role": "user", "content": [
+            {"text": "This image contains a job description. Transcribe ALL "
+                     "its text verbatim. Output ONLY the transcribed text, "
+                     "nothing else."},
+            {"image": {"format": fmt, "source": {"bytes": data}}},
+        ]}],
+        inferenceConfig={"maxTokens": 2500, "temperature": 0.0},
+    )
+    return resp["output"]["message"]["content"][0]["text"]
 
 
 @router.post("/extract")
 async def extract_jd(file: UploadFile = File(...),
                      current_user: User = Depends(get_current_user)):
-    """Pull the text out of an uploaded JD file (PDF or plain text)."""
+    """Pull the text out of an uploaded JD file (PDF, image, or plain text)."""
     name = (file.filename or "").lower()
+    ext = "." + name.rsplit(".", 1)[-1] if "." in name else ""
     data = await file.read()
     if len(data) > MAX_UPLOAD:
         raise HTTPException(status_code=413, detail="File is too large (max 5 MB).")
 
     text = ""
-    if name.endswith(".pdf"):
+    if ext == ".pdf":
         try:
             from pypdf import PdfReader
             reader = PdfReader(io.BytesIO(data))
@@ -60,11 +83,21 @@ async def extract_jd(file: UploadFile = File(...),
             logger.exception("pdf extraction failed")
             raise HTTPException(status_code=422,
                                 detail="Couldn't read that PDF. Try pasting the text instead.")
-    elif name.endswith((".txt", ".md")):
+    elif ext in IMAGE_FORMATS:
+        if len(data) > MAX_IMAGE:
+            raise HTTPException(status_code=413,
+                                detail="Image is too large (max 3 MB). Crop it or paste the text.")
+        try:
+            text = _image_text(data, IMAGE_FORMATS[ext])
+        except Exception:
+            logger.exception("image extraction failed")
+            raise HTTPException(status_code=422,
+                                detail="Couldn't read that image. Try a clearer screenshot or paste the text.")
+    elif ext in (".txt", ".md"):
         text = data.decode("utf-8", errors="ignore")
     else:
         raise HTTPException(status_code=415,
-                            detail="Use a PDF or text file, or paste the description.")
+                            detail="Use a PDF, image, or text file, or paste the description.")
 
     text = text.strip()
     if len(text) < 40:

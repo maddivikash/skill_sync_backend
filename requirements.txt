@@ -25,3 +25,5 @@ httpx==0.28.1
 
 # PDF text extraction (job-description file upload)
 pypdf==5.1.0
+# Bedrock vision (JD image extraction) — auth via EC2 instance role
+boto3==1.35.90
