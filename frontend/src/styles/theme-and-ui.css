@@ -1970,3 +1970,96 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   background: var(--brand-soft);
 }
 .learn-next-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- Job prep: form, report, readiness, due chips ---------- */
+.page__head-actions { display: flex; gap: 10px; align-items: center; }
+
+.prep-form { display: flex; flex-direction: column; gap: 14px; }
+.prep-form__lead { color: var(--text-muted); font-size: 0.92rem; line-height: 1.55; margin: 0; }
+.prep-form textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 160px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.prep-form textarea:focus { outline: none; border-color: var(--brand); }
+.prep-form__row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.prep-form__days { display: flex; flex-direction: column; gap: 6px; }
+.prep-form__days span { font-size: 0.8rem; color: var(--text-soft); }
+.prep-form__days select { width: auto; min-width: 130px; }
+.prep-form__building {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+.prep-report { display: flex; flex-direction: column; gap: 16px; }
+.prep-report__score {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--brand-soft);
+}
+.prep-report__num {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 640;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.prep-report__num::after { content: "%"; font-size: 1.2rem; }
+.prep-report__label { color: var(--text-muted); font-size: 0.95rem; }
+.prep-report__summary { margin: 0; color: var(--text-muted); line-height: 1.55; font-size: 0.92rem; }
+.prep-report__block h4 {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-soft);
+}
+.prep-report__block ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.prep-report__block li { font-size: 0.9rem; line-height: 1.45; }
+.prep-report__block li.is-strength { color: var(--success); }
+.prep-report__block li.is-gap { color: var(--text); }
+.prep-report__foot { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+.prep-report__actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+.meta-pill--readiness {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+.task-row__due {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.task-row__due.is-overdue {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}

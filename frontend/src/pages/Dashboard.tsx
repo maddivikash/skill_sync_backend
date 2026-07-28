@@ -13,6 +13,7 @@ import ProgressRing from "../components/ProgressRing";
 import ProgressBar from "../components/ProgressBar";
 import Modal from "../components/Modal";
 import ActivitySidebar from "../components/ActivitySidebar";
+import JobPrepModal from "../components/JobPrepModal";
 import RoleCombobox from "../components/RoleCombobox";
 import { logActivity } from "../lib/activity";
 import { useConfirm, useToast } from "../context/ui";
@@ -28,6 +29,7 @@ export default function Dashboard() {
 
   const [roles, setRoles] = useState<CatalogRole[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [prepOpen, setPrepOpen] = useState(false);
   const [role, setRole] = useState("");
   const [hours, setHours] = useState("5");
   const [weeks, setWeeks] = useState("12");
@@ -181,15 +183,23 @@ export default function Dashboard() {
             Track progress across every learning goal in one place.
           </p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={() => {
-            resetForm();
-            setModalOpen(true);
-          }}
-        >
-          + New goal
-        </button>
+        <div className="page__head-actions">
+          <button
+            className="btn btn--soft"
+            onClick={() => setPrepOpen(true)}
+          >
+            🎯 Prep for a job
+          </button>
+          <button
+            className="btn btn--primary"
+            onClick={() => {
+              resetForm();
+              setModalOpen(true);
+            }}
+          >
+            + New goal
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert--error">{error}</div>}
@@ -319,6 +329,11 @@ export default function Dashboard() {
                     <span className="meta-pill">
                       {goal.paths_count} {goal.paths_count === 1 ? "path" : "paths"}
                     </span>
+                    {goal.readiness != null && (
+                      <span className="meta-pill meta-pill--readiness">
+                        🎯 {goal.readiness}% ready
+                      </span>
+                    )}
                   </div>
 
                   <div className="goal-card__progress">
@@ -390,6 +405,12 @@ export default function Dashboard() {
           </div>
         </form>
       </Modal>
+
+      <JobPrepModal
+        open={prepOpen}
+        onClose={() => setPrepOpen(false)}
+        onCreated={load}
+      />
     </div>
   );
 }

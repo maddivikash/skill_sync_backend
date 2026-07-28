@@ -29,6 +29,7 @@ export interface Goal {
 export interface DashboardGoal extends Goal {
   paths_count: number;
   progress: Progress;
+  readiness?: number | null; // job-prep goals only
 }
 
 export interface Dashboard {
@@ -55,6 +56,7 @@ export interface Step {
 }
 
 export interface Task {
+  due_date?: string | null;
   id: number;
   step_id: number;
   title: string;

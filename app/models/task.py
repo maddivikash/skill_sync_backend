@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.db.base_class import Base
@@ -14,6 +14,7 @@ class Task(Base):
     title       = Column(String(255), nullable=False)
     description = Column(String(1000), nullable=True)
     is_done     = Column(Boolean, default=False)
+    due_date    = Column(Date, nullable=True)  # deadline for job-prep plans
     created_at  = Column(DateTime, default=datetime.utcnow)
 
     step = relationship("Step", back_populates="tasks")

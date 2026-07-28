@@ -68,6 +68,12 @@ def get_dashboard(db: Session, owner_id: int) -> dict:
         total, done = counts.get(goal.id, (0, 0))
         overall_total += total
         overall_done += done
+        # Job-prep goals: readiness grows from the LLM's initial estimate
+        # toward 100 as the plan gets completed.
+        readiness = None
+        if goal.readiness_base is not None:
+            frac = (done / total) if total else 0.0
+            readiness = round(goal.readiness_base + (100 - goal.readiness_base) * frac)
         goal_items.append(
             {
                 "id": goal.id,
@@ -78,6 +84,7 @@ def get_dashboard(db: Session, owner_id: int) -> dict:
                 "created_at": goal.created_at,
                 "paths_count": paths_count.get(goal.id, 0),
                 "progress": _stats(total, done),
+                "readiness": readiness,
             }
         )
 

@@ -45,6 +45,24 @@ export default function TaskRow({ task, onChanged }: Props) {
     }
   }
 
+  // Due-date chip: "due Jul 30", red when overdue and not done.
+  let dueChip = null;
+  if (task.due_date) {
+    const due = new Date(task.due_date + "T00:00:00");
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const overdue = !task.is_done && due < today;
+    const label = due.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
+    dueChip = (
+      <span className={`task-row__due ${overdue ? "is-overdue" : ""}`}>
+        {overdue ? `was due ${label}` : `due ${label}`}
+      </span>
+    );
+  }
+
   return (
     <li className={`task-row ${task.is_done ? "task-row--done" : ""}`}>
       <label className="checkbox">
@@ -57,6 +75,7 @@ export default function TaskRow({ task, onChanged }: Props) {
         <span className="checkbox__box" aria-hidden="true" />
         <span className="task-row__title">{task.title}</span>
       </label>
+      {dueChip}
       <button
         className="icon-btn"
         onClick={remove}

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -14,6 +14,7 @@ class ProgressStats(BaseModel):
 class GoalWithProgress(GoalOut):
     paths_count: int
     progress: ProgressStats
+    readiness: Optional[int] = None  # job-prep goals: current readiness 0-100
 
 
 class Dashboard(BaseModel):

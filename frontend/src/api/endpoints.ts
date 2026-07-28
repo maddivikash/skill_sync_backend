@@ -86,6 +86,26 @@ export function sendChat(
   });
 }
 
+// ---- Job prep (JD -> readiness + dated plan) ----
+export interface PrepReport {
+  goal_id: number;
+  role: string;
+  summary: string;
+  readiness: number;
+  strengths: string[];
+  gaps: string[];
+  total_tasks: number;
+}
+export function prepAnalyze(
+  jdText: string,
+  days: number
+): Promise<PrepReport> {
+  return apiFetch<PrepReport>("/prep/analyze", {
+    method: "POST",
+    body: { jd_text: jdText, days },
+  });
+}
+
 // ---- Learn Studio (guided/interactive tutoring) ----
 export interface LearnTask {
   id: number;
