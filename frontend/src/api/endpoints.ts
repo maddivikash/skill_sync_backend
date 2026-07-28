@@ -1,4 +1,4 @@
-import { apiFetch, setTokens } from "./client";
+import { API_URL, apiFetch, getAccessToken, setTokens } from "./client";
 import type {
   CatalogRole,
   Dashboard,
@@ -104,6 +104,29 @@ export function prepAnalyze(
     method: "POST",
     body: { jd_text: jdText, days },
   });
+}
+
+// Multipart upload (apiFetch is JSON-only, so this uses fetch directly).
+export async function prepExtract(file: File): Promise<{ text: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const token = getAccessToken();
+  const res = await fetch(`${API_URL}/prep/extract`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: form,
+  });
+  if (!res.ok) {
+    let detail = "Couldn't read that file.";
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") detail = data.detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  return res.json();
 }
 
 // ---- Learn Studio (guided/interactive tutoring) ----

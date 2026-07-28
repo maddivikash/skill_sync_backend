@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { prepAnalyze, type PrepReport } from "../api/endpoints";
+import { prepAnalyze, prepExtract, type PrepReport } from "../api/endpoints";
 import Modal from "./Modal";
 import { logActivity } from "../lib/activity";
 
@@ -15,13 +15,34 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
   const [jd, setJd] = useState("");
   const [days, setDays] = useState(30);
   const [busy, setBusy] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [attachedName, setAttachedName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<PrepReport | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   function reset() {
     setJd("");
     setReport(null);
     setError(null);
+    setAttachedName(null);
+  }
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!file || extracting) return;
+    setExtracting(true);
+    setError(null);
+    try {
+      const { text } = await prepExtract(file);
+      setJd(text);
+      setAttachedName(file.name);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't read that file.");
+    } finally {
+      setExtracting(false);
+    }
   }
 
   async function analyze(e: FormEvent) {
@@ -65,8 +86,30 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
             onChange={(e) => setJd(e.target.value)}
             placeholder="Paste the full job description here…"
             rows={9}
-            disabled={busy}
+            disabled={busy || extracting}
           />
+          <div className="prep-form__attach">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".pdf,.txt,.md"
+              onChange={handleFile}
+              hidden
+            />
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={busy || extracting}
+            >
+              {extracting ? "Reading file…" : "📎 Attach a file (PDF or TXT)"}
+            </button>
+            {attachedName && !extracting && (
+              <span className="prep-form__attached">
+                ✓ {attachedName}: review the text above, then analyze
+              </span>
+            )}
+          </div>
           <div className="prep-form__row">
             <label className="prep-form__days">
               <span>Prep time</span>

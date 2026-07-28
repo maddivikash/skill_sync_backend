@@ -2063,3 +2063,13 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   border-color: var(--danger);
   background: var(--danger-soft);
 }
+
+/* ---------- Job prep: file attach ---------- */
+.prep-form__attach {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: -6px;
+}
+.prep-form__attached { font-size: 0.82rem; color: var(--success); }

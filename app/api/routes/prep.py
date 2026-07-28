@@ -6,11 +6,12 @@ the user has already built in Ascend (their existing steps), estimates
 readiness, and produces a plan whose tasks carry due dates spread over the
 chosen number of days.
 """
+import io
 import json
 import logging
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
@@ -35,6 +36,41 @@ def _skill_inventory(db: Session, uid: int) -> list:
             .filter(Goal.owner_id == uid, Goal.is_deleted.is_(False))
             .limit(120).all())
     return sorted({r[0] for r in rows})
+
+
+MAX_UPLOAD = 5 * 1024 * 1024  # 5 MB
+
+
+@router.post("/extract")
+async def extract_jd(file: UploadFile = File(...),
+                     current_user: User = Depends(get_current_user)):
+    """Pull the text out of an uploaded JD file (PDF or plain text)."""
+    name = (file.filename or "").lower()
+    data = await file.read()
+    if len(data) > MAX_UPLOAD:
+        raise HTTPException(status_code=413, detail="File is too large (max 5 MB).")
+
+    text = ""
+    if name.endswith(".pdf"):
+        try:
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(data))
+            text = "\n".join((page.extract_text() or "") for page in reader.pages)
+        except Exception:
+            logger.exception("pdf extraction failed")
+            raise HTTPException(status_code=422,
+                                detail="Couldn't read that PDF. Try pasting the text instead.")
+    elif name.endswith((".txt", ".md")):
+        text = data.decode("utf-8", errors="ignore")
+    else:
+        raise HTTPException(status_code=415,
+                            detail="Use a PDF or text file, or paste the description.")
+
+    text = text.strip()
+    if len(text) < 40:
+        raise HTTPException(status_code=422,
+                            detail="Couldn't find enough text in that file. Try pasting it.")
+    return {"text": text[:15000]}
 
 
 ANALYZE_SYSTEM = (
