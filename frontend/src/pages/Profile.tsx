@@ -13,6 +13,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/theme";
 import { useConfirm, useToast } from "../context/ui";
 import { resetActivity } from "../lib/activity";
+import Modal from "../components/Modal";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ export default function Profile() {
   const [next, setNext] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
   const [savingPw, setSavingPw] = useState(false);
+  const [pwOpen, setPwOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [archived, setArchived] = useState<Goal[]>([]);
   const [unarchivingId, setUnarchivingId] = useState<number | null>(null);
@@ -88,6 +90,7 @@ export default function Profile() {
       setCurrent("");
       setNext("");
       setConfirmPw("");
+      setPwOpen(false);
     } catch (err) {
       error(err instanceof Error ? err.message : "Failed to change password.");
     } finally {
@@ -184,9 +187,21 @@ export default function Profile() {
         </div>
       </section>
 
-      {/* Change password */}
+      {/* Security */}
       <section className="settings-card">
-        <h2 className="settings-card__title">Change password</h2>
+        <h2 className="settings-card__title">Security</h2>
+        <div className="settings-row">
+          <div>
+            <div className="settings-row__label">Password</div>
+            <div className="muted-note">Change the password you sign in with.</div>
+          </div>
+          <button className="btn btn--soft" onClick={() => setPwOpen(true)}>
+            Change password
+          </button>
+        </div>
+      </section>
+
+      <Modal open={pwOpen} title="Change password" onClose={() => setPwOpen(false)}>
         <form onSubmit={handleChangePassword} className="form settings-form">
           <label className="field">
             <span className="field__label">Current password</span>
@@ -196,37 +211,43 @@ export default function Profile() {
               onChange={(e) => setCurrent(e.target.value)}
               required
               autoComplete="current-password"
+              autoFocus
             />
           </label>
-          <div className="field-row">
-            <label className="field field--grow">
-              <span className="field__label">New password</span>
-              <input
-                type="password"
-                value={next}
-                onChange={(e) => setNext(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
-            </label>
-            <label className="field field--grow">
-              <span className="field__label">Confirm new password</span>
-              <input
-                type="password"
-                value={confirmPw}
-                onChange={(e) => setConfirmPw(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
-            </label>
-          </div>
+          <label className="field">
+            <span className="field__label">New password</span>
+            <input
+              type="password"
+              value={next}
+              onChange={(e) => setNext(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </label>
+          <label className="field">
+            <span className="field__label">Confirm new password</span>
+            <input
+              type="password"
+              value={confirmPw}
+              onChange={(e) => setConfirmPw(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          </label>
           <div className="form__actions">
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setPwOpen(false)}
+            >
+              Cancel
+            </button>
             <button type="submit" className="btn btn--primary" disabled={savingPw}>
               {savingPw ? "Updating…" : "Update password"}
             </button>
           </div>
         </form>
-      </section>
+      </Modal>
 
       {/* Archived goals */}
       <section className="settings-card">
