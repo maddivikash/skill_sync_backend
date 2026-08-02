@@ -7,6 +7,11 @@
 }
 
 ascenddaily.in, skillsync-io.duckdns.org {
+	# Access log (JSON to stdout) — analyze with:  docker compose logs caddy
+	log {
+		output stdout
+		format json
+	}
 	handle_path /api/* {
 		reverse_proxy api:8000
 	}
