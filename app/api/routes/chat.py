@@ -422,7 +422,7 @@ def chat(payload: ChatRequest, db: Session = Depends(get_db),
                 "tools": TOOLS,
                 "tool_choice": "auto",
                 "temperature": 0.2,
-                "max_tokens": 900,
+                "max_tokens": 1500,
             }
             resp = _groq_call(payload_json)
             if not resp.is_success:

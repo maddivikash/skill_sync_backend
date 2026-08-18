@@ -27,7 +27,7 @@ def _ordered_keys():
     return keys[start:] + keys[:start]
 
 
-def complete(messages, *, temperature=0.4, max_tokens=900, response_format=None,
+def complete(messages, *, temperature=0.4, max_tokens=1500, response_format=None,
              model=None):
     """Call Groq chat-completions and return the assistant's text content.
 
