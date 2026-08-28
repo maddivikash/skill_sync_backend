@@ -59,7 +59,7 @@ def _page(title: str, description: str, body: str, canonical: str, og_type="webs
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body><div class="wrap">
-<header class="top"><a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M4 13l4 4L20 5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>As<b>cend</b></a>
+<header class="top"><a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M4 13l4 4L20 5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>As<b>cend</b></span></a>
 <nav><a href="/blog">All digests</a><a href="/login">Sign in</a><a class="btn" href="/register">Start free</a></nav></header>
 {body}
 <footer>Ascend turns a target role into a plan you can finish. <a href="/register">Create your plan</a> · <a href="/login">Sign in</a></footer>
