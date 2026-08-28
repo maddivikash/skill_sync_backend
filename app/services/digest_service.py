@@ -140,12 +140,31 @@ WEEKLY_PROMPT = SYSTEM_PROMPT.replace(
 )
 
 
+# Groq free tier: 8,000 tokens per minute per key, and max_tokens counts toward it.
+# Keep prompt + candidates under ~5,000 tokens (~4 chars/token) so 2,000 output fits.
+INPUT_CHAR_BUDGET = 20_000
+OUTPUT_TOKENS = 2_000
+
+
+def _fit_budget(candidates: list[dict], budget_chars: int = INPUT_CHAR_BUDGET) -> list[dict]:
+    """Shrink the candidate payload to the token budget: shorter snippets first,
+    then drop the oldest stories. Returns a new list."""
+    slim = [{**c, "snippet": (c.get("snippet") or "")[:220]} for c in candidates]
+    while slim and len(json.dumps(slim, ensure_ascii=False)) > budget_chars:
+        slim.pop()  # candidates are newest-first
+    return slim
+
+
 def summarize(candidates: list[dict], day: date, weekly: bool = False) -> dict:
+    fitted = _fit_budget(candidates)
+    if len(fitted) < len(candidates):
+        logger.info("trimmed candidates %d -> %d to fit token budget", len(candidates), len(fitted))
+    candidates = fitted
     user = json.dumps({"date": day.isoformat(), "candidates": candidates}, ensure_ascii=False)
     raw = complete(
         [{"role": "system", "content": WEEKLY_PROMPT if weekly else SYSTEM_PROMPT},
          {"role": "user", "content": user}],
-        temperature=0.3, max_tokens=2500,
+        temperature=0.3, max_tokens=OUTPUT_TOKENS,
         response_format={"type": "json_object"},
     )
     data = json.loads(raw)
