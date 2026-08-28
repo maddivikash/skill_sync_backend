@@ -142,6 +142,24 @@ def summarize(candidates: list[dict], day: date) -> dict:
     return data
 
 
+def _clean(text):
+    """House style: no em/en dashes, plain apostrophes and hyphens."""
+    if not isinstance(text, str):
+        return text
+    return (text.replace(" — ", ": ").replace(" – ", ": ").replace("—", ", ").replace("–", "-")
+                .replace("\u2011", "-").replace("\u2019", "'").replace("\u2018", "'")
+                .replace("\u201c", '"').replace("\u201d", '"'))
+
+
+def _clean_data(data: dict) -> dict:
+    for k in ("title", "summary", "learn_next", "learn_role"):
+        data[k] = _clean(data.get(k))
+    for it in data.get("items", []):
+        for k in ("headline", "summary", "why_it_matters", "source_name"):
+            it[k] = _clean(it.get(k))
+    return data
+
+
 def _slugify(s: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
     return s[:120]
@@ -158,11 +176,11 @@ def create_digest(db: Session, day: date | None = None, publish: bool = False) -
     candidates = fetch_candidates()
     if len(candidates) < 3:
         raise RuntimeError(f"only {len(candidates)} candidate stories; not enough for a digest")
-    data = summarize(candidates, day)
+    data = _clean_data(summarize(candidates, day))
 
     post = Post(
         slug=base_slug,
-        title=(data.get("title") or f"What's new in AI: {day.strftime('%d %b %Y')}")[:200],
+        title=f"What's new in AI: {day.strftime('%d %b %Y')}",
         summary=data.get("summary") or "",
         items_json=json.dumps(data["items"], ensure_ascii=False),
         learn_next=data.get("learn_next"),
