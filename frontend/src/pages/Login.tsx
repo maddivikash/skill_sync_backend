@@ -161,6 +161,9 @@ export default function Login() {
         <p className="auth-footer">
           New here? <Link to="/register">Create an account</Link>
         </p>
+        <p className="auth-blog-link">
+          Not ready to sign up? <a href="/blog">Read today's AI digest</a>
+        </p>
       </div>
     </div>
   );

@@ -2192,3 +2192,6 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .latest-ai__date { font-size: 12px; color: var(--text-soft); white-space: nowrap; min-width: 48px; }
 .latest-ai__title { font-weight: 600; }
 @media (max-width: 640px) { .landing__links > a:not(.btn) { display: none; } }
+
+.auth-blog-link { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--text-soft); }
+.auth-blog-link a { color: var(--brand); font-weight: 600; text-decoration: none; }

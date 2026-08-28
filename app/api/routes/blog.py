@@ -19,21 +19,28 @@ from app.models.post import Post
 router = APIRouter(tags=["Public site"])
 
 CSS = """
-:root{--bg:#f4f4fb;--surface:#fff;--border:#e8e6f3;--text:#1b1a2e;--muted:#5d5b78;--brand:#6a3bf2;--brand-soft:#f0ebfe}
-@media(prefers-color-scheme:dark){:root{--bg:#0a0912;--surface:#15131f;--border:#2a2740;--text:#ecebf5;--muted:#a3a0bd;--brand:#8a82ff;--brand-soft:#23233c}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
-a{color:var(--brand)}.wrap{max-width:760px;margin:0 auto;padding:32px 20px 64px}
-header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:36px}
-.brand{font-weight:800;font-size:22px;text-decoration:none;color:var(--text)}.brand b{color:var(--brand)}
-.btn{display:inline-block;background:var(--brand);color:#fff;text-decoration:none;padding:10px 18px;border-radius:999px;font-weight:600}
-.eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--brand);font-weight:700}
-h1{font-size:34px;line-height:1.2;margin:8px 0 12px}h2{font-size:20px;margin:0 0 6px}
-.lede{color:var(--muted);font-size:18px}.meta{color:var(--muted);font-size:14px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 22px;margin:18px 0}
-.card p{margin:6px 0}.why{color:var(--muted)}.src{font-size:14px}
-.cta{background:var(--brand-soft);border:1px solid var(--border);border-radius:16px;padding:22px;margin-top:32px}
-.cta h3{margin:0 0 8px}.list a.title{font-size:20px;font-weight:700;text-decoration:none;color:var(--text)}
-footer{margin-top:48px;color:var(--muted);font-size:14px}
+:root{--bg:#f4efe4;--surface:#fff;--surface-2:#faf5ec;--border:#e7dece;--text:#29211a;--muted:#6f6357;--soft:#a2978a;--brand:#a8492f;--brand-dark:#8f3c26;--brand-soft:#f3e5da}
+@media(prefers-color-scheme:dark){:root{--bg:#1b1510;--surface:#241c15;--surface-2:#2d241b;--border:#392e23;--text:#f1e9dd;--muted:#bcae9d;--soft:#8c7f6f;--brand:#d5805f;--brand-dark:#c56f4e;--brand-soft:#2f2016}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+a{color:var(--brand)}.wrap{max-width:780px;margin:0 auto;padding:28px 22px 72px}
+header.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:44px}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:24px;text-decoration:none;color:var(--text)}
+.brand b{color:var(--brand);font-weight:700}.brand .mark{width:30px;height:30px;border-radius:9px;background:var(--brand);display:inline-flex;align-items:center;justify-content:center}
+nav{display:flex;align-items:center;gap:18px}nav a{text-decoration:none;color:var(--muted);font-weight:600;font-size:15px}
+.btn{display:inline-block;background:var(--brand);color:#fff!important;text-decoration:none;padding:10px 20px;border-radius:999px;font-weight:600}.btn:hover{background:var(--brand-dark)}
+.eyebrow{text-transform:uppercase;letter-spacing:.12em;font-size:12px;color:var(--brand);font-weight:700}
+h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(34px,5vw,48px);line-height:1.1;margin:10px 0 14px;letter-spacing:-.01em}
+h1 em{font-style:italic;color:var(--brand)}
+h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:22px;line-height:1.25;margin:0 0 8px}
+.lede{color:var(--muted);font-size:18px}.meta{color:var(--soft);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 24px;margin:18px 0;box-shadow:0 1px 2px rgba(60,42,28,.06)}
+.card p{margin:6px 0}.why{color:var(--muted)}.why::before{content:"Why it matters: ";color:var(--brand);font-weight:600}.src{font-size:14px;color:var(--soft)}
+.list a.title{font-family:"Fraunces",Georgia,serif;font-size:24px;font-weight:600;text-decoration:none;color:var(--text);line-height:1.25}
+.list a.title:hover{color:var(--brand)}
+.cta{background:var(--brand-soft);border:1px solid var(--border);border-radius:18px;padding:26px;margin-top:36px}
+.cta h3{font-family:"Fraunces",Georgia,serif;font-size:24px;margin:6px 0 10px}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);color:var(--soft);font-size:14px}
+@media(max-width:560px){nav a:not(.btn){display:none}}
 """
 
 
@@ -47,9 +54,11 @@ def _page(title: str, description: str, body: str, canonical: str, og_type="webs
 <meta property="og:title" content="{h(title)}"><meta property="og:description" content="{h(description)}">
 <meta property="og:url" content="{h(canonical)}"><meta name="twitter:card" content="summary">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>{CSS}</style></head><body><div class="wrap">
-<header class="top"><a class="brand" href="/">As<b>cend</b></a>
-<nav><a href="/blog" style="margin-right:16px">What's new in AI</a><a class="btn" href="/register">Start free</a></nav></header>
+<header class="top"><a class="brand" href="/"><span class="mark"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M4 13l4 4L20 5" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>As<b>cend</b></a>
+<nav><a href="/blog">All digests</a><a href="/login">Sign in</a><a class="btn" href="/register">Start free</a></nav></header>
 {body}
 <footer>Ascend turns a target role into a plan you can finish. <a href="/register">Create your plan</a> · <a href="/login">Sign in</a></footer>
 </div></body></html>"""
@@ -72,7 +81,7 @@ def blog_index(db: Session = Depends(get_db)):
 <p class="meta">{p.published_at.strftime('%d %b %Y') if p.published_at else ''}</p>
 <p>{h(p.summary)}</p></article>""" for p in posts
     ) or "<p class='lede'>First digest lands soon.</p>"
-    body = f"""<span class="eyebrow">Daily digest</span><h1>What's new in AI</h1>
+    body = f"""<span class="eyebrow">Daily digest</span><h1>What's new <em>in AI.</em></h1>
 <p class="lede">Five stories a day, one thing to learn from them. Written for people building a career, not chasing hype.</p>{cards}"""
     return _page("What's new in AI | Ascend",
                  "A daily five-story AI digest with one concrete thing to learn next.",

@@ -124,6 +124,9 @@ export default function Register() {
         <p className="auth-footer">
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
+        <p className="auth-blog-link">
+          Not ready to sign up? <a href="/blog">Read today's AI digest</a>
+        </p>
       </div>
     </div>
   );
