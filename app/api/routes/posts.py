@@ -20,7 +20,7 @@ from app.core.deps import get_current_user
 from app.db.deps import get_db
 from app.models.post import Post
 from app.models.user import User
-from app.services.digest_service import create_digest
+from app.services.digest_service import create_digest, create_weekly
 
 router = APIRouter(prefix="/posts", tags=["Posts"])
 
@@ -33,7 +33,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 def serialize(p: Post, full: bool = True) -> dict:
     d = {
-        "id": p.id, "slug": p.slug, "title": p.title, "summary": p.summary,
+        "id": p.id, "slug": p.slug, "kind": p.kind, "title": p.title, "summary": p.summary,
         "learn_next": p.learn_next, "learn_role": p.learn_role, "status": p.status,
         "published_at": p.published_at.isoformat() if p.published_at else None,
         "created_at": p.created_at.isoformat() if p.created_at else None,
@@ -44,9 +44,12 @@ def serialize(p: Post, full: bool = True) -> dict:
 
 
 @router.get("/")
-def list_posts(limit: int = Query(10, ge=1, le=50), db: Session = Depends(get_db)):
-    rows = (db.query(Post).filter(Post.status == "published")
-            .order_by(Post.published_at.desc()).limit(limit).all())
+def list_posts(limit: int = Query(10, ge=1, le=50), kind: Optional[str] = Query(None),
+               db: Session = Depends(get_db)):
+    q = db.query(Post).filter(Post.status == "published")
+    if kind in ("daily", "weekly"):
+        q = q.filter(Post.kind == kind)
+    rows = q.order_by(Post.published_at.desc()).limit(limit).all()
     return [serialize(p, full=False) for p in rows]
 
 
@@ -65,10 +68,10 @@ def get_post(slug: str, db: Session = Depends(get_db)):
 
 
 @router.post("/generate", status_code=201)
-def generate(publish: bool = False, db: Session = Depends(get_db),
+def generate(publish: bool = False, kind: str = "daily", db: Session = Depends(get_db),
              _: User = Depends(require_admin)):
     try:
-        p = create_digest(db, publish=publish)
+        p = (create_weekly if kind == "weekly" else create_digest)(db, publish=publish)
     except RuntimeError as e:
         raise HTTPException(status_code=502, detail=str(e))
     return serialize(p)

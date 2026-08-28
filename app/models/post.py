@@ -21,6 +21,7 @@ class Post(Base):
     items_json   = Column(Text, nullable=False)           # JSON list of stories
     learn_next   = Column(Text, nullable=True)            # "what to learn from this" hook
     learn_role   = Column(String(100), nullable=True)     # suggested target role for the CTA
+    kind         = Column(String(20), default="daily", index=True, nullable=False)  # daily | weekly
     status       = Column(String(20), default="draft", index=True, nullable=False)
     published_at = Column(DateTime, nullable=True, index=True)
     created_at   = Column(DateTime, default=datetime.utcnow, nullable=False)

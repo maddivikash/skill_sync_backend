@@ -38,13 +38,28 @@ export default function Blog() {
           <span className="eyebrow">Daily digest</span>
           <h1 className="landing__title">What's new in AI</h1>
           <p className="landing__sub">Five stories a day, one thing to learn from them.</p>
-          {posts.map((p) => (
+          {posts.filter((p) => p.kind !== "weekly").map((p) => (
             <Link key={p.id} to={`/blog/${p.slug}`} className="digest-card">
               <span className="digest-card__date">{p.published_at?.slice(0, 10)}</span>
               <h3>{p.title}</h3>
               <p>{p.summary}</p>
             </Link>
           ))}
+          <section className="blog__weekly">
+            <span className="eyebrow">Weekly highlights</span>
+            <h2 className="landing__title blog__weekly-title">The week, <em>in one read.</em></h2>
+            {posts.filter((p) => p.kind === "weekly").length === 0 ? (
+              <p className="landing__muted">First weekly roundup lands this Sunday.</p>
+            ) : (
+              posts.filter((p) => p.kind === "weekly").map((p) => (
+                <Link key={p.id} to={`/blog/${p.slug}`} className="digest-card">
+                  <span className="digest-card__date">{p.published_at?.slice(0, 10)}</span>
+                  <h3>{p.title}</h3>
+                  <p>{p.summary}</p>
+                </Link>
+              ))
+            )}
+          </section>
         </>
       )}
 

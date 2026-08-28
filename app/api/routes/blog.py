@@ -39,6 +39,8 @@ h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:22px;line-heig
 .list a.title:hover{color:var(--brand)}
 .cta{background:var(--brand-soft);border:1px solid var(--border);border-radius:18px;padding:26px;margin-top:36px}
 .cta h3{font-family:"Fraunces",Georgia,serif;font-size:24px;margin:6px 0 10px}
+.weekly{margin-top:56px;padding-top:36px;border-top:1px solid var(--border)}
+h2.section{font-size:clamp(28px,4vw,38px);margin:8px 0 10px}h2.section em{font-style:italic;color:var(--brand)}
 footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--border);color:var(--soft);font-size:14px}
 @media(max-width:560px){nav a:not(.btn){display:none}}
 """
@@ -74,15 +76,21 @@ def _cta(post: Post) -> str:
 
 @router.get("/blog", response_class=HTMLResponse)
 def blog_index(db: Session = Depends(get_db)):
-    posts = (db.query(Post).filter(Post.status == "published")
-             .order_by(Post.published_at.desc()).limit(30).all())
-    cards = "".join(
-        f"""<article class="card list"><a class="title" href="/blog/{h(p.slug)}">{h(p.title)}</a>
+    def _cards(kind, limit, empty):
+        rows = (db.query(Post).filter(Post.status == "published", Post.kind == kind)
+                .order_by(Post.published_at.desc()).limit(limit).all())
+        return "".join(
+            f"""<article class="card list"><a class="title" href="/blog/{h(p.slug)}">{h(p.title)}</a>
 <p class="meta">{p.published_at.strftime('%d %b %Y') if p.published_at else ''}</p>
-<p>{h(p.summary)}</p></article>""" for p in posts
-    ) or "<p class='lede'>First digest lands soon.</p>"
+<p>{h(p.summary)}</p></article>""" for p in rows
+        ) or f"<p class='lede'>{empty}</p>"
     body = f"""<span class="eyebrow">Daily digest</span><h1>What's new <em>in AI.</em></h1>
-<p class="lede">Five stories a day, one thing to learn from them. Written for people building a career, not chasing hype.</p>{cards}"""
+<p class="lede">Five stories a day, one thing to learn from them. Written for people building a career, not chasing hype.</p>
+{_cards("daily", 14, "First digest lands soon.")}
+<section class="weekly"><span class="eyebrow">Weekly highlights</span>
+<h2 class="section">The week, <em>in one read.</em></h2>
+<p class="lede">Every Sunday: the stories from the past seven days worth remembering, and the one theme behind them.</p>
+{_cards("weekly", 8, "First weekly roundup lands this Sunday.")}</section>"""
     return _page("What's new in AI | Ascend",
                  "A daily five-story AI digest with one concrete thing to learn next.",
                  body, f"{settings.SITE_URL}/blog")
@@ -106,7 +114,7 @@ def blog_post(slug: str, db: Session = Depends(get_db)):
         "author": {"@type": "Organization", "name": "Ascend"},
         "mainEntityOfPage": f"{settings.SITE_URL}/blog/{p.slug}",
     })
-    body = f"""<span class="eyebrow">What's new in AI</span><h1>{h(p.title)}</h1>
+    body = f"""<span class="eyebrow">{"Weekly highlights" if p.kind == "weekly" else "What's new in AI"}</span><h1>{h(p.title)}</h1>
 <p class="meta">{p.published_at.strftime('%d %b %Y') if p.published_at else ''} · <a href="/blog">All digests</a></p>
 <p class="lede">{h(p.summary)}</p>{stories}{_cta(p)}
 <script type="application/ld+json">{ld}</script>"""

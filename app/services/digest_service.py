@@ -1,8 +1,9 @@
 """Daily 'What's new in AI' digest: fetch RSS feeds, summarize with Groq, save a Post.
 
 Run inside the api container (host cron calls this once a day):
-    python -m app.services.digest_service            # creates a DRAFT
-    python -m app.services.digest_service --publish  # creates and publishes
+    python -m app.services.digest_service            # daily digest, DRAFT
+    python -m app.services.digest_service --publish  # daily, published
+    python -m app.services.digest_service --weekly   # weekly highlights (last 7 days)
 
 Zero extra dependencies: RSS parsed with the stdlib, summary via the shared
 Groq client. Drafts are reviewed/published from the app by an admin user.
@@ -65,7 +66,7 @@ def _strip_html(s: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", s or "")).strip()
 
 
-def fetch_candidates(hours: int = MAX_AGE_HOURS) -> list[dict]:
+def fetch_candidates(hours: int = MAX_AGE_HOURS, limit: int = MAX_CANDIDATES) -> list[dict]:
     """Recent items across all feeds: [{source, title, url, snippet, published}]."""
     cutoff = datetime.utcnow() - timedelta(hours=hours)
     out, seen = [], set()
@@ -100,7 +101,7 @@ def fetch_candidates(hours: int = MAX_AGE_HOURS) -> list[dict]:
             out.append({"source": source, "title": title, "url": link,
                         "snippet": snippet, "published": pub.isoformat() if pub else None})
     out.sort(key=lambda x: x["published"] or "", reverse=True)
-    return out[:MAX_CANDIDATES]
+    return out[:limit]
 
 
 SYSTEM_PROMPT = """You write a short daily digest called "What's new in AI" for Ascend, a learning
@@ -126,17 +127,30 @@ Return ONLY JSON with this shape:
  "learn_next": str, "learn_role": str}"""
 
 
-def summarize(candidates: list[dict], day: date) -> dict:
+WEEKLY_PROMPT = SYSTEM_PROMPT.replace(
+    'a short daily digest called "What\'s new in AI"',
+    'a weekly roundup called "Weekly highlights in AI" covering the past seven days',
+).replace(
+    "- Pick the 5 most important stories from the candidates.",
+    "- Pick the 5 to 7 stories from the whole week that a learner would regret missing. "
+    "Favor the biggest shifts (major launches, research results, policy) over daily noise.",
+).replace(
+    "- learn_next: 2 sentences telling the reader one concrete skill or topic to study this week",
+    "- learn_next: 3 sentences on the single theme of the week and one concrete skill to study next week",
+)
+
+
+def summarize(candidates: list[dict], day: date, weekly: bool = False) -> dict:
     user = json.dumps({"date": day.isoformat(), "candidates": candidates}, ensure_ascii=False)
     raw = complete(
-        [{"role": "system", "content": SYSTEM_PROMPT},
+        [{"role": "system", "content": WEEKLY_PROMPT if weekly else SYSTEM_PROMPT},
          {"role": "user", "content": user}],
         temperature=0.3, max_tokens=2500,
         response_format={"type": "json_object"},
     )
     data = json.loads(raw)
     allowed = {c["url"] for c in candidates}
-    data["items"] = [i for i in data.get("items", []) if i.get("source_url") in allowed][:6]
+    data["items"] = [i for i in data.get("items", []) if i.get("source_url") in allowed][:7 if weekly else 6]
     if not data["items"]:
         raise RuntimeError("digest produced no items with valid sources")
     return data
@@ -196,9 +210,40 @@ def create_digest(db: Session, day: date | None = None, publish: bool = False) -
     return post
 
 
+def create_weekly(db: Session, day: date | None = None, publish: bool = False) -> Post:
+    """Weekly highlights from the past 7 days of feeds (independent of daily posts)."""
+    day = day or date.today()
+    year, week, _ = day.isocalendar()
+    slug = f"weekly-highlights-in-ai-{year}-w{week:02d}"
+    existing = db.query(Post).filter(Post.slug == slug).first()
+    if existing:
+        logger.info("weekly %s already exists (id=%s)", slug, existing.id)
+        return existing
+
+    candidates = fetch_candidates(hours=24 * 7, limit=80)
+    if len(candidates) < 5:
+        raise RuntimeError(f"only {len(candidates)} candidate stories this week")
+    data = _clean_data(summarize(candidates, day, weekly=True))
+    start = day - timedelta(days=6)
+    span = (f"{start.day} to {day.strftime('%d %b %Y')}" if start.month == day.month
+            else f"{start.strftime('%d %b')} to {day.strftime('%d %b %Y')}")
+    post = Post(
+        slug=slug, kind="weekly",
+        title=f"Weekly highlights in AI: {span}",
+        summary=data.get("summary") or "",
+        items_json=json.dumps(data["items"], ensure_ascii=False),
+        learn_next=data.get("learn_next"), learn_role=data.get("learn_role") or None,
+        status="published" if publish else "draft",
+        published_at=datetime.utcnow() if publish else None,
+    )
+    db.add(post); db.commit(); db.refresh(post)
+    logger.info("weekly %s created id=%s status=%s items=%d", slug, post.id, post.status, len(data["items"]))
+    return post
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     publish = "--publish" in sys.argv
     with SessionLocal() as db:
-        p = create_digest(db, publish=publish)
+        p = (create_weekly if "--weekly" in sys.argv else create_digest)(db, publish=publish)
         print(f"post id={p.id} slug={p.slug} status={p.status}")

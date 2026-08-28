@@ -119,6 +119,7 @@ export interface PostItem {
 export interface Post {
   id: number;
   slug: string;
+  kind: "daily" | "weekly";
   title: string;
   summary: string;
   learn_next: string | null;

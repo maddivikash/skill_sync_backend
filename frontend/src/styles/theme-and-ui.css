@@ -2195,3 +2195,5 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 
 .auth-blog-link { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--text-soft); }
 .auth-blog-link a { color: var(--brand); font-weight: 600; text-decoration: none; }
+.blog__weekly { margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--border); }
+.blog__weekly-title { font-size: clamp(26px, 4vw, 36px); margin: 6px 0 16px; }
