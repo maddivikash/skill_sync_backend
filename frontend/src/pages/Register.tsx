@@ -1,14 +1,22 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { register as apiRegister } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
-import { ApiError } from "../api/client";
+import { ApiError, getAccessToken } from "../api/client";
 
 export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const roleParam = params.get("role");
+
+  // Already signed in (e.g. arrived from a blog CTA): skip signup and open
+  // the new-goal modal prefilled with the suggested role.
+  useEffect(() => {
+    if (getAccessToken()) {
+      navigate(roleParam ? `/?new_goal=${encodeURIComponent(roleParam)}` : "/", { replace: true });
+    }
+  }, [navigate, roleParam]);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
