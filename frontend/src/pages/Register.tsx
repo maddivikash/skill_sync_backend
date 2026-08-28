@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { register as apiRegister } from "../api/endpoints";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../api/client";
@@ -7,6 +7,8 @@ import { ApiError } from "../api/client";
 export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const roleParam = params.get("role");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +34,8 @@ export default function Register() {
       // Auto-login after successful registration.
       try {
         await login(email.trim(), password);
-        navigate("/", { replace: true });
+        // Landing/blog CTAs pass ?role=; open the new-goal modal prefilled.
+        navigate(roleParam ? `/?new_goal=${encodeURIComponent(roleParam)}` : "/", { replace: true });
       } catch {
         navigate("/login", { replace: true });
       }

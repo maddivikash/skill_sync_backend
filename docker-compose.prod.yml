@@ -16,6 +16,9 @@ services:
       CORS_ORIGINS: "https://ascenddaily.in,https://skillsync-io.duckdns.org"
       # Password-reset links point at the live frontend.
       FRONTEND_URL: "https://ascenddaily.in"
+      SITE_URL: "https://ascenddaily.in"
+      # Who may generate/publish the daily AI digest from the app.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       # AI coach (Groq). GROQ_API_KEYS = comma-separated keys (rotated on limits).
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_API_KEYS: ${GROQ_API_KEYS:-}

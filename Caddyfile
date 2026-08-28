@@ -15,6 +15,17 @@ ascenddaily.in, skillsync-io.duckdns.org {
 	handle_path /api/* {
 		reverse_proxy api:8000
 	}
+	# Server-rendered public pages (SEO + link previews): the SPA can't give
+	# crawlers real HTML, so these paths go to the API instead of the web shell.
+	handle /blog* {
+		reverse_proxy api:8000
+	}
+	handle /robots.txt {
+		reverse_proxy api:8000
+	}
+	handle /sitemap.xml {
+		reverse_proxy api:8000
+	}
 	handle {
 		reverse_proxy web:80
 	}

@@ -43,6 +43,14 @@ class Settings:
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
     EMAIL_FROM: str = os.getenv("EMAIL_FROM", "Ascend <no-reply@ascenddaily.in>")
 
+    # Public site: comma-separated emails allowed to generate/publish blog posts.
+    ADMIN_EMAILS: list = [
+        e.strip().lower()
+        for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()
+    ]
+    # Canonical public origin for sitemap/OG URLs (no trailing slash).
+    SITE_URL: str = os.getenv("SITE_URL", os.getenv("FRONTEND_URL", "http://localhost:3000")).rstrip("/")
+
     # AI coach (Groq — free hosted LLM API). If unset, the chat endpoint is off.
     GROQ_API_KEY: str = os.getenv("GROQ_API_KEY", "")
     # One or more keys (comma-separated) — rotated on rate limits for failover.

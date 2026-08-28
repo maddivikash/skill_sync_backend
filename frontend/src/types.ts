@@ -107,3 +107,24 @@ export interface RoleSuggestions {
     project: CatalogItem[];
   };
 }
+
+export interface PostItem {
+  headline: string;
+  summary: string;
+  why_it_matters: string;
+  source_name: string;
+  source_url: string;
+}
+
+export interface Post {
+  id: number;
+  slug: string;
+  title: string;
+  summary: string;
+  learn_next: string | null;
+  learn_role: string | null;
+  status: "draft" | "published";
+  published_at: string | null;
+  created_at: string | null;
+  items?: PostItem[];
+}

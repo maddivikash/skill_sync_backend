@@ -5,3 +5,4 @@ from .learning_path import LearningPath
 from .step import Step
 from .task import Task
 from .catalog import CatalogRole, CatalogItem
+from .post import Post

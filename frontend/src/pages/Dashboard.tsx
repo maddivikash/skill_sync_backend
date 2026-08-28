@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   createGoal,
   deleteGoal,
@@ -14,12 +14,14 @@ import ProgressBar from "../components/ProgressBar";
 import Modal from "../components/Modal";
 import ActivitySidebar from "../components/ActivitySidebar";
 import JobPrepModal from "../components/JobPrepModal";
+import LatestInAI from "../components/LatestInAI";
 import RoleCombobox from "../components/RoleCombobox";
 import { logActivity } from "../lib/activity";
 import { useConfirm, useToast } from "../context/ui";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
   const confirm = useConfirm();
   const { success, error: toastError } = useToast();
 
@@ -63,6 +65,15 @@ export default function Dashboard() {
   useEffect(() => {
     listRoles().then(setRoles).catch(() => setRoles([]));
   }, []);
+
+  // Deep link from landing page / blog CTA: /?new_goal=AI%20Engineer
+  useEffect(() => {
+    const preset = params.get("new_goal");
+    if (!preset) return;
+    setRole(preset);
+    setModalOpen(true);
+    setParams({}, { replace: true });
+  }, [params, setParams]);
 
   // Close the kebab menu on any outside click.
   useEffect(() => {
@@ -207,6 +218,7 @@ export default function Dashboard() {
       <div className="dashboard-layout">
         <ActivitySidebar />
         <div className="dashboard-main">
+          <LatestInAI />
           <section className="overview-card">
             <ProgressRing percent={overall.percent} size={168} stroke={13} label="complete" />
             <div className="overview-card__stats">

@@ -5,6 +5,7 @@ import type {
   Dashboard,
   Goal,
   LearningPath,
+  Post,
   RoleSuggestions,
   Step,
   Task,
@@ -360,4 +361,25 @@ export function getSuggestions(role: string): Promise<RoleSuggestions> {
   return apiFetch<RoleSuggestions>(
     `/catalog/suggestions?role=${encodeURIComponent(role)}`
   );
+}
+
+// ---- Public blog (daily AI digest) ----
+export function listPosts(limit = 5): Promise<Post[]> {
+  return apiFetch<Post[]>(`/posts/?limit=${limit}`, { auth: false });
+}
+
+export function getPost(slug: string): Promise<Post> {
+  return apiFetch<Post>(`/posts/${encodeURIComponent(slug)}`, { auth: false });
+}
+
+export function listAllPosts(): Promise<Post[]> {
+  return apiFetch<Post[]>("/posts/admin/all");
+}
+
+export function generatePost(publish = false): Promise<Post> {
+  return apiFetch<Post>(`/posts/generate?publish=${publish}`, { method: "POST" });
+}
+
+export function setPostStatus(id: number, status: "draft" | "published"): Promise<Post> {
+  return apiFetch<Post>(`/posts/${id}`, { method: "PATCH", body: { status } });
 }
