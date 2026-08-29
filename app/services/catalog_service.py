@@ -11,11 +11,20 @@ CATEGORIES = ("skill", "course", "tool", "project")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
+# LLM suggestions are nondeterministic and cost quota, so remember them per
+# role text: reopening the wizard (or any refetch) returns the same picks.
+_LLM_CACHE: dict[str, dict] = {}
+_LLM_CACHE_MAX = 200
+
+
 def _llm_suggestions(role_text: str) -> dict | None:
     """Generate suggestions for a role NOT in the catalog, via Groq. Returns a
     grouped dict of CatalogItemOut-shaped dicts, or None if unavailable."""
     if not settings.GROQ_API_KEYS or not role_text.strip():
         return None
+    cache_key = role_text.strip().lower()
+    if cache_key in _LLM_CACHE:
+        return _LLM_CACHE[cache_key]
     prompt = (
         f"Suggest a learning plan for someone whose goal/role is: \"{role_text}\". "
         "Return ONLY JSON with keys skills, courses, tools, projects.\n"
@@ -31,7 +40,7 @@ def _llm_suggestions(role_text: str) -> dict | None:
         "messages": [{"role": "user", "content": prompt}],
         "response_format": {"type": "json_object"},
         "temperature": 0.4,
-        "max_tokens": 1600,
+        "max_tokens": 2400,
     }
     try:
         resp = None
@@ -45,11 +54,24 @@ def _llm_suggestions(role_text: str) -> dict | None:
     except Exception:
         return None
 
+    # Models sometimes wrap the payload ({"learning_plan": {...}}) or vary key
+    # casing ("Skills"). Unwrap and normalize before reading categories.
+    if isinstance(data, dict) and len(data) == 1:
+        only = next(iter(data.values()))
+        if isinstance(only, dict):
+            data = only
+    if not isinstance(data, dict):
+        return None
+    norm = {str(k).strip().lower(): v for k, v in data.items()}
+
     grouped = {c: [] for c in CATEGORIES}
     nid = -1  # synthetic ids (not persisted; only used by the wizard UI)
     mapping = {"skill": "skills", "course": "courses", "tool": "tools", "project": "projects"}
     for cat, key in mapping.items():
-        for it in (data.get(key) or [])[:8]:
+        items = norm.get(key) or norm.get(cat) or []
+        if not isinstance(items, list):
+            items = []
+        for it in items[:8]:
             if not isinstance(it, dict) or not it.get("name"):
                 continue
             grouped[cat].append({
@@ -63,8 +85,15 @@ def _llm_suggestions(role_text: str) -> dict | None:
                 "steps": [str(s) for s in it.get("steps")] if isinstance(it.get("steps"), list) else None,
             })
             nid -= 1
-    # Only return if we actually got something.
-    return grouped if any(grouped[c] for c in CATEGORIES) else None
+    # Only return (and cache) if we actually got something. A response missing
+    # whole categories is a bad generation; do not pin it in the cache.
+    if not any(grouped[c] for c in CATEGORIES):
+        return None
+    if all(grouped[c] for c in CATEGORIES):
+        if len(_LLM_CACHE) >= _LLM_CACHE_MAX:
+            _LLM_CACHE.pop(next(iter(_LLM_CACHE)))
+        _LLM_CACHE[cache_key] = grouped
+    return grouped
 
 
 def list_roles(db: Session):
@@ -97,14 +126,22 @@ def _match_role(db: Session, role_text: str) -> CatalogRole | None:
     # both say "developer" — that produced web suggestions for a Python role).
     GENERIC = {"developer", "engineer", "engineering", "manager", "specialist",
                "analyst", "senior", "junior", "lead", "associate", "consultant",
-               "expert", "intern", "professional", "architect"}
-    words = {w for w in q.replace("/", " ").split() if len(w) > 2} - GENERIC
+               "expert", "intern", "professional", "architect",
+               # connectors (2+ letters, so the length filter no longer drops them)
+               "of", "to", "in", "at", "on", "or", "and", "the", "for"}
+
+    def _words(text: str) -> set[str]:
+        # Keep 2-letter acronyms (AI, ML, QA, HR, UX, BI) — they are often the
+        # most distinctive part of a role name ("AI Engineer").
+        return {w for w in text.replace("/", " ").replace("&", " ").split()
+                if len(w) >= 2} - GENERIC
+
+    words = _words(q)
     if not words:
         return None
     best, best_score = None, 0
     for r in roles:
-        rwords = ({w for w in r.name.lower().replace("/", " ").split() if len(w) > 2}
-                  - GENERIC)
+        rwords = _words(r.name.lower())
         score = len(words & rwords)
         if score > best_score:
             best, best_score = r, score

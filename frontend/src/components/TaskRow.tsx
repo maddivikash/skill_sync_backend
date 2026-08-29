@@ -7,9 +7,12 @@ import type { Task } from "../types";
 interface Props {
   task: Task;
   onChanged: () => void;
+  /** This task has a saved coach chat thread the user can revisit. */
+  hasChat?: boolean;
+  onOpenChat?: () => void;
 }
 
-export default function TaskRow({ task, onChanged }: Props) {
+export default function TaskRow({ task, onChanged, hasChat, onOpenChat }: Props) {
   const confirm = useConfirm();
   const { success, error } = useToast();
   const [busy, setBusy] = useState(false);
@@ -75,6 +78,16 @@ export default function TaskRow({ task, onChanged }: Props) {
         <span className="checkbox__box" aria-hidden="true" />
         <span className="task-row__title">{task.title}</span>
       </label>
+      {hasChat && onOpenChat && (
+        <button
+          className="task-row__chat"
+          onClick={onOpenChat}
+          title="Revisit the coach chat for this task"
+          aria-label={`Open coach chat for ${task.title}`}
+        >
+          💬 Revisit
+        </button>
+      )}
       {dueChip}
       <button
         className="icon-btn"

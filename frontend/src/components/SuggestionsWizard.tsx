@@ -52,6 +52,10 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
   // them as "Added" instead of offering to add duplicates.
   const [existingStepNames, setExistingStepNames] = useState<Set<string>>(new Set());
   const [existingPathTitles, setExistingPathTitles] = useState<Set<string>>(new Set());
+  // Read through a ref so the fetch effect doesn't re-run every time the
+  // parent refetches paths (onAdded → new array reference → wizard reload).
+  const pathsRef = useRef(existingPaths);
+  pathsRef.current = existingPaths;
 
   useEffect(() => {
     if (!open) return;
@@ -65,7 +69,7 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
       const CAT_PLURALS = new Set(["skills", "courses", "tools"]);
       const stepNames = new Set<string>();
       const pathTitles = new Set<string>();
-      for (const p of existingPaths) {
+      for (const p of pathsRef.current) {
         const title = p.title.trim().toLowerCase();
         pathTitles.add(title); // projects are stored as paths named after them
         if (CAT_PLURALS.has(title)) {
@@ -85,7 +89,7 @@ export default function SuggestionsWizard({ open, goalId, role, existingPaths, o
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false));
-  }, [open, role, existingPaths]);
+  }, [open, role]);
 
   if (!open) return null;
 

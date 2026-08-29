@@ -865,11 +865,16 @@ input:focus {
 .task-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   padding: 5px 6px;
   border-radius: 6px;
   transition: background 0.12s;
+}
+/* The title label absorbs free space so due/chat chips stay pinned to the
+   right, next to the delete button. */
+.task-row > .checkbox {
+  flex: 1;
+  min-width: 0;
 }
 .task-row:hover {
   background: var(--surface-2);

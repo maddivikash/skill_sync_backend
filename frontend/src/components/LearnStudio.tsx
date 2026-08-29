@@ -19,23 +19,81 @@ import {
 import { logActivity } from "../lib/activity";
 import { useToast } from "../context/ui";
 
-// Minimal, safe markdown -> HTML (escape first, then bold/code/bullets/breaks).
-function fmt(text: string): string {
-  const esc = text
+function escapeHtml(text: string): string {
+  return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  return esc
+}
+
+// Lightweight, language-agnostic syntax highlighting for chat code blocks.
+// One alternation pass so tokens never overlap: comments, strings, preprocessor
+// or Python-style # lines, numbers, keywords.
+const CODE_KEYWORDS = new Set([
+  // shared / c-family
+  "if", "else", "for", "while", "do", "switch", "case", "default", "break",
+  "continue", "return", "class", "struct", "enum", "public", "private",
+  "protected", "static", "const", "void", "int", "double", "float", "bool",
+  "char", "long", "short", "unsigned", "signed", "auto", "new", "delete",
+  "try", "catch", "throw", "namespace", "using", "template", "typename",
+  "virtual", "override", "true", "false", "nullptr", "this",
+  // js / ts
+  "function", "let", "var", "await", "async", "import", "export", "from",
+  "extends", "implements", "interface", "type", "null", "undefined", "of",
+  // python
+  "def", "elif", "lambda", "pass", "raise", "with", "as", "in", "not", "and",
+  "or", "is", "None", "True", "False", "print", "self", "yield", "global",
+  // sql-ish
+  "select", "insert", "update", "where", "join", "group", "order", "by",
+]);
+
+function highlightCode(code: string): string {
+  const esc = escapeHtml(code);
+  const token =
+    /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|(#[^\n]*)|("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(\d+(?:\.\d+)?[fLu]*)\b|\b([A-Za-z_][A-Za-z0-9_]*)\b/g;
+  return esc.replace(token, (m, comment, meta, str, num, word) => {
+    if (comment) return `<span class="tok-comment">${m}</span>`;
+    if (meta) return `<span class="tok-meta">${m}</span>`;
+    if (str) return `<span class="tok-string">${m}</span>`;
+    if (num) return `<span class="tok-number">${m}</span>`;
+    if (word && CODE_KEYWORDS.has(word)) return `<span class="tok-keyword">${m}</span>`;
+    return m;
+  });
+}
+
+// Minimal, safe markdown -> HTML. Fenced ```code``` blocks are lifted out
+// first (rendered dark with syntax colors), then the rest gets escape +
+// bold/inline-code/bullets/breaks.
+function fmt(text: string): string {
+  const blocks: string[] = [];
+  const withPlaceholders = text.replace(
+    /```[\w+#-]*[ \t]*\n?([\s\S]*?)```/g,
+    (_m, code: string) => {
+      blocks.push(
+        `<pre class="learn-code"><code>${highlightCode(code.replace(/\n$/, ""))}</code></pre>`
+      );
+      return `\u0000${blocks.length - 1}\u0000`;
+    }
+  );
+  const html = escapeHtml(withPlaceholders)
     .replace(/^\s*#{1,6}\s*/gm, "")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/^\s*[-*]\s+/gm, "• ")
     .replace(/\n/g, "<br/>");
+  // Re-insert code blocks, dropping any <br/> hugging the placeholder so the
+  // block doesn't get extra blank lines around it.
+  return html.replace(
+    /(?:<br\/>)?\u0000(\d+)\u0000(?:<br\/>)?/g,
+    (_m, i: string) => blocks[Number(i)]
+  );
 }
 
 interface Props {
   stepId: number;
   stepTitle: string;
+  /** Jump straight to this task's saved chat thread on open (revisit mode). */
+  initialTaskId?: number;
   onChanged: () => void;
   onClose: () => void;
 }
@@ -60,9 +118,23 @@ function loadSaved(stepId: number): SavedSession | null {
   }
 }
 
+/** Task ids in this step that already have a coach chat thread saved, so the
+    task list can offer "revisit chat" on started/completed tasks. */
+export function savedChatTaskIds(stepId: number): Set<number> {
+  const saved = loadSaved(stepId);
+  const ids = new Set<number>();
+  if (saved?.threads) {
+    for (const [id, msgs] of Object.entries(saved.threads)) {
+      if (Array.isArray(msgs) && msgs.length > 0) ids.add(Number(id));
+    }
+  }
+  return ids;
+}
+
 export default function LearnStudio({
   stepId,
   stepTitle,
+  initialTaskId,
   onChanged,
   onClose,
 }: Props) {
@@ -105,8 +177,18 @@ export default function LearnStudio({
         Object.keys(saved.threads || {}).forEach((id) =>
           kicked.current.add(Number(id))
         );
-        setIdx(Math.min(saved.idx ?? 0, Math.max(0, queue.length - 1)));
-        setPhase(saved.phase === "done" ? "done" : "learning");
+        // Revisit mode: land directly on the requested task's thread.
+        const jumpTo =
+          initialTaskId != null
+            ? queue.findIndex((t) => t.id === initialTaskId)
+            : -1;
+        if (jumpTo >= 0) {
+          setIdx(jumpTo);
+          setPhase("learning");
+        } else {
+          setIdx(Math.min(saved.idx ?? 0, Math.max(0, queue.length - 1)));
+          setPhase(saved.phase === "done" ? "done" : "learning");
+        }
       } catch {
         setResuming(false); // fall back to the mode screen
       } finally {
@@ -308,11 +390,8 @@ export default function LearnStudio({
     try {
       await updateStep(stepId, { is_done: true });
       logActivity("complete_step");
-      try {
-        localStorage.removeItem(savedKey(stepId)); // session finished
-      } catch {
-        /* ignore */
-      }
+      // Keep the saved session: completed tasks stay revisitable from the
+      // task list ("revisit chat"), so learners can revise old threads.
       onChanged();
       window.dispatchEvent(new Event("skillsync:data-changed"));
       onClose();

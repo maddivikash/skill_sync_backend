@@ -9,7 +9,7 @@ import { logActivity } from "../lib/activity";
 import { useConfirm, useToast } from "../context/ui";
 import type { Step, Task } from "../types";
 import TaskRow from "./TaskRow";
-import LearnStudio from "./LearnStudio";
+import LearnStudio, { savedChatTaskIds } from "./LearnStudio";
 
 // Render any URL in a description as a clickable link (e.g. course links).
 function linkifyDesc(text: string) {
@@ -54,6 +54,12 @@ export default function StepItem({ step, onChanged }: Props) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [learning, setLearning] = useState(false);
+  // Task to open the coach chat at (revisit mode); null = normal flow.
+  const [chatTaskId, setChatTaskId] = useState<number | null>(null);
+  // Tasks with a saved coach thread get a "revisit chat" affordance.
+  // Recomputed on each render; the modal closing re-renders and picks up
+  // threads created during the session.
+  const chatTaskIds = savedChatTaskIds(step.id);
 
   const loadTasks = useCallback(async () => {
     try {
@@ -181,7 +187,16 @@ export default function StepItem({ step, onChanged }: Props) {
           ) : (
             <ul className="task-list">
               {tasks.map((task) => (
-                <TaskRow key={task.id} task={task} onChanged={refresh} />
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onChanged={refresh}
+                  hasChat={chatTaskIds.has(task.id)}
+                  onOpenChat={() => {
+                    setChatTaskId(task.id);
+                    setLearning(true);
+                  }}
+                />
               ))}
             </ul>
           )}
@@ -235,8 +250,12 @@ export default function StepItem({ step, onChanged }: Props) {
         <LearnStudio
           stepId={step.id}
           stepTitle={step.title}
+          initialTaskId={chatTaskId ?? undefined}
           onChanged={refresh}
-          onClose={() => setLearning(false)}
+          onClose={() => {
+            setLearning(false);
+            setChatTaskId(null);
+          }}
         />
       )}
     </div>

@@ -1704,6 +1704,33 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   font-size: 0.88em;
 }
 
+/* Fenced code blocks in coach chat: dark editor-style panel with syntax
+   colors, readable in both themes. */
+.learn-code {
+  display: block;
+  margin: 10px 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #1b1e28;
+  border: 1px solid #2b2f3d;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.55;
+  font-size: 0.85rem;
+}
+.learn-code code {
+  background: none;
+  padding: 0;
+  color: #e6e6f0;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: inherit;
+}
+.learn-code .tok-comment { color: #7a8494; font-style: italic; }
+.learn-code .tok-meta { color: #6fc2b0; }
+.learn-code .tok-string { color: #e8b168; }
+.learn-code .tok-number { color: #d99bd4; }
+.learn-code .tok-keyword { color: #82aaff; font-weight: 600; }
+
 .learn-modal__foot {
   border-top: 1px solid var(--border);
   padding: 14px 24px;
@@ -2062,6 +2089,23 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
   color: var(--danger);
   border-color: var(--danger);
   background: var(--danger-soft);
+}
+
+/* Revisit the coach chat for a task that already has a thread. */
+.task-row__chat {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: inherit;
+}
+.task-row__chat:hover {
+  border-color: var(--brand);
 }
 
 /* ---------- Job prep: file attach ---------- */

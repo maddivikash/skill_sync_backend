@@ -192,7 +192,11 @@ def teach_turn(req: LearnTurnRequest, db: Session = Depends(get_db),
         f"For context, the full task list is: {all_tasks}. Teach ONLY the current "
         f"task, do not jump ahead to other tasks. Be concrete and practical, use a "
         f"real example, and keep it fairly short and readable. Never use em dashes; "
-        f"use commas or periods. Plain language, no heavy formatting."
+        f"use commas or periods. Plain language, no heavy formatting. "
+        f"When you show code, always wrap it in a fenced block: a line with three "
+        f"backticks and the language (for example ```cpp), the code, then a line "
+        f"with three backticks. Never show code inline in a sentence and never "
+        f"use one or two backticks for a code block."
     )
     if req.mode == "guided":
         system = common + (
