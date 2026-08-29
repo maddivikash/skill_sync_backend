@@ -1,0 +1,82 @@
+# Auto-deploy on merge: any push to main/master (a merged PR is a push) tells
+# the EC2 box, via SSM, to pull that branch's tarball and rebuild containers.
+#
+# Auth is GitHub OIDC -> IAM role (no AWS keys stored in GitHub). One-time
+# account setup lives in deploy/setup-github-oidc.sh.
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: {} # manual "Run workflow" button for any branch
+
+permissions:
+  id-token: write # mint the OIDC token for AWS
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false # let a running deploy finish; queue the next
+
+env:
+  AWS_REGION: ap-south-1
+  INSTANCE_ID: i-0c8a6ad86684312c4
+  ROLE_ARN: arn:aws:iam::720443382372:role/github-actions-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assume deploy role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Trigger deploy script on the box (SSM)
+        id: send
+        run: |
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "GitHub Actions deploy ${{ github.ref_name }} @ ${{ github.sha }}" \
+            --parameters "{\"commands\":[\"curl -sL https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/deploy/ec2-deploy-branch.sh | bash -s -- ${{ github.ref_name }}\"],\"executionTimeout\":[\"900\"]}" \
+            --query Command.CommandId --output text)
+          echo "cmd_id=$CMD_ID" >> "$GITHUB_OUTPUT"
+          echo "SSM command: $CMD_ID"
+
+      - name: Wait for the deploy to finish
+        run: |
+          CMD_ID='${{ steps.send.outputs.cmd_id }}'
+          for i in $(seq 1 90); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            echo "[$i] $STATUS"
+            case "$STATUS" in
+              Success) break ;;
+              Failed|Cancelled|TimedOut) break ;;
+            esac
+            sleep 10
+          done
+          aws ssm get-command-invocation \
+            --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text | tail -30
+          if [ "$STATUS" != "Success" ]; then
+            echo "::error::Deploy ended with status $STATUS"
+            aws ssm get-command-invocation \
+              --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query StandardErrorContent --output text | tail -30
+            exit 1
+          fi
+
+      - name: Smoke test the live site
+        run: |
+          for i in $(seq 1 12); do
+            BODY=$(curl -s --max-time 10 https://ascenddaily.in/api/health || true)
+            echo "[$i] $BODY"
+            echo "$BODY" | grep -q '"status":"ok"' && exit 0
+            sleep 10
+          done
+          echo "::error::Health check never returned ok"
+          exit 1
