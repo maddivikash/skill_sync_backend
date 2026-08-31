@@ -14,6 +14,7 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
   const navigate = useNavigate();
   const [jd, setJd] = useState("");
   const [days, setDays] = useState(30);
+  const [customDays, setCustomDays] = useState(false);
   const [busy, setBusy] = useState(false);
   const [extracting, setExtracting] = useState(false);
   const [attachedName, setAttachedName] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
     setReport(null);
     setError(null);
     setAttachedName(null);
+    setCustomDays(false);
   }
 
   async function handleFile(e: ChangeEvent<HTMLInputElement>) {
@@ -51,7 +53,7 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const r = await prepAnalyze(jd.trim(), days);
+      const r = await prepAnalyze(jd.trim(), Math.min(90, Math.max(7, days || 30)));
       setReport(r);
       logActivity("goal");
       onCreated();
@@ -113,16 +115,41 @@ export default function JobPrepModal({ open, onClose, onCreated }: Props) {
           <div className="prep-form__row">
             <label className="prep-form__days">
               <span>Prep time</span>
-              <select
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
-                disabled={busy}
-              >
-                <option value={14}>2 weeks</option>
-                <option value={30}>30 days</option>
-                <option value={45}>45 days</option>
-                <option value={60}>60 days</option>
-              </select>
+              <div className="prep-form__days-controls">
+                <select
+                  value={customDays ? "custom" : days}
+                  onChange={(e) => {
+                    if (e.target.value === "custom") {
+                      setCustomDays(true);
+                    } else {
+                      setCustomDays(false);
+                      setDays(Number(e.target.value));
+                    }
+                  }}
+                  disabled={busy}
+                >
+                  <option value={14}>2 weeks</option>
+                  <option value={30}>30 days</option>
+                  <option value={45}>45 days</option>
+                  <option value={60}>60 days</option>
+                  <option value="custom">Custom…</option>
+                </select>
+                {customDays && (
+                  <input
+                    type="number"
+                    className="prep-form__days-input"
+                    min={7}
+                    max={90}
+                    value={days}
+                    onChange={(e) => setDays(Number(e.target.value))}
+                    onBlur={() =>
+                      setDays((d) => Math.min(90, Math.max(7, d || 30)))
+                    }
+                    disabled={busy}
+                    aria-label="Custom prep days (7 to 90)"
+                  />
+                )}
+              </div>
             </label>
             <button
               type="submit"

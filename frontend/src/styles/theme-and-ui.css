@@ -2027,6 +2027,8 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .prep-form__days { display: flex; flex-direction: column; gap: 6px; }
 .prep-form__days span { font-size: 0.8rem; color: var(--text-soft); }
 .prep-form__days select { width: auto; min-width: 130px; }
+.prep-form__days-controls { display: flex; align-items: center; gap: 8px; }
+.prep-form__days-input { width: 84px; }
 .prep-form__building {
   display: flex;
   align-items: center;

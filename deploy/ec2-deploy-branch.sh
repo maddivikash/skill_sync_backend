@@ -26,10 +26,10 @@ if ! grep -q '^ADMIN_EMAILS=' .env; then
   echo 'ADMIN_EMAILS=vikashmaddi1@gmail.com,vickyvikashmaddi@gmail.com' >> .env
 fi
 
-# Daily digest DRAFT at 01:00 UTC (06:30 IST); same pattern as the reminders cron.
+# Daily digest AUTO-PUBLISH at 01:00 UTC (06:30 IST); same pattern as the reminders cron.
 cat > /etc/cron.d/ascend-digest <<'CRON'
-0 1 * * * root cd /home/ec2-user/skillsync && /usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api python -m app.services.digest_service >> /var/log/ascend-digest.log 2>&1
-0 2 * * 0 root cd /home/ec2-user/skillsync && /usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api python -m app.services.digest_service --weekly >> /var/log/ascend-digest.log 2>&1
+0 1 * * * root cd /home/ec2-user/skillsync && /usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api python -m app.services.digest_service --publish >> /var/log/ascend-digest.log 2>&1
+0 2 * * 0 root cd /home/ec2-user/skillsync && /usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml exec -T api python -m app.services.digest_service --weekly --publish >> /var/log/ascend-digest.log 2>&1
 CRON
 chmod 644 /etc/cron.d/ascend-digest
 
