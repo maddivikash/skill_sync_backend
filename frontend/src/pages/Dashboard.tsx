@@ -14,7 +14,6 @@ import ProgressBar from "../components/ProgressBar";
 import Modal from "../components/Modal";
 import ActivitySidebar from "../components/ActivitySidebar";
 import JobPrepModal from "../components/JobPrepModal";
-import LatestInAI from "../components/LatestInAI";
 import RoleCombobox from "../components/RoleCombobox";
 import { logActivity } from "../lib/activity";
 import { useConfirm, useToast } from "../context/ui";
@@ -218,7 +217,6 @@ export default function Dashboard() {
       <div className="dashboard-layout">
         <ActivitySidebar />
         <div className="dashboard-main">
-          <LatestInAI />
           <section className="overview-card">
             <ProgressRing percent={overall.percent} size={168} stroke={13} label="complete" />
             <div className="overview-card__stats">

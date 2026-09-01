@@ -2214,7 +2214,7 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .feature { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-sm); }
 .feature h3 { margin: 0 0 8px; font-size: 17px; }
 .feature p { margin: 0; color: var(--text-muted); line-height: 1.55; }
-.landing__digest .section-head a, .latest-ai .section-head a { color: var(--brand); text-decoration: none; font-weight: 600; font-size: 14px; }
+.landing__digest .section-head a { color: var(--brand); text-decoration: none; font-weight: 600; font-size: 14px; }
 .landing__muted { color: var(--text-muted); }
 .digest-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
 .digest-card { display: block; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-decoration: none; color: var(--text); margin-bottom: 14px; transition: border-color .15s, transform .15s; }
@@ -2229,14 +2229,6 @@ body.coach-open .app-shell { padding-right: min(var(--coach-w), 100vw); }
 .landing__footer a { color: var(--text-muted); text-decoration: none; }
 .blog .landing__title { font-size: clamp(30px, 5vw, 44px); }
 .blog article { max-width: 760px; }
-/* dashboard widget */
-.latest-ai { margin-bottom: 8px; }
-.latest-ai .section-head { margin: 0 0 12px; }
-.latest-ai__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.latest-ai__list a { display: flex; gap: 14px; align-items: baseline; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; text-decoration: none; color: var(--text); }
-.latest-ai__list a:hover { border-color: var(--brand); }
-.latest-ai__date { font-size: 12px; color: var(--text-soft); white-space: nowrap; min-width: 48px; }
-.latest-ai__title { font-weight: 600; }
 @media (max-width: 640px) { .landing__links > a:not(.btn) { display: none; } }
 
 .auth-blog-link { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--text-soft); }
